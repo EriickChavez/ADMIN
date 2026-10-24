@@ -383,18 +383,6 @@ export function BrandingPage() {
         <div className="min-w-0 lg:col-span-3">
           <Card className="overflow-hidden">
             <div className="space-y-6 p-5 sm:p-6">
-              <DropZone
-                slot="banner"
-                label="Banner"
-                hint="PNG, JPEG o WebP · máx. 5 MB · ideal 1200×400"
-                currentUrl={branding?.bannerUrl ?? null}
-                pendingFile={bannerFile}
-                onSelect={selectBanner}
-                error={bannerError}
-                className="h-40 sm:h-48"
-                imageClassName="object-cover"
-              />
-
               <div className="border-t border-slate-100 pt-6">
                 <DropZone
                   slot="logo"
@@ -408,6 +396,18 @@ export function BrandingPage() {
                   imageClassName="object-cover"
                 />
               </div>
+
+              <DropZone
+                slot="banner"
+                label="Banner"
+                hint="PNG, JPEG o WebP · máx. 5 MB · ideal 1200×400"
+                currentUrl={branding?.bannerUrl ?? null}
+                pendingFile={bannerFile}
+                onSelect={selectBanner}
+                error={bannerError}
+                className="h-40 sm:h-48"
+                imageClassName="object-cover"
+              />
             </div>
 
             {formError && (
