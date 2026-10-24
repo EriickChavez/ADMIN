@@ -16,21 +16,13 @@ export const api = axios.create({
 });
 
 export class ApiError extends Error {
-  status: number;
-  code: string;
-  details: unknown[];
-
   constructor(
-    status: number,
-    code: string,
+    public status: number,
+    public code: string,
     message: string,
-    details: unknown[] = []
+    public details: unknown[] = []
   ) {
     super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.code = code;
-    this.details = details;
   }
 }
 

@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import {
-  ChevronDown,
-  LifeBuoy,
-  LogOut,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronDown, LifeBuoy, LogOut, X, type LucideIcon } from "lucide-react";
 
 export interface SidebarChild {
   to: string;
@@ -57,13 +51,7 @@ const childClass = ({ isActive }: { isActive: boolean }) =>
       : "text-slate-500 hover:bg-slate-200/60 hover:text-slate-900"
   }`;
 
-function NavItem({
-  item,
-  onNavigate,
-}: {
-  item: SidebarItem;
-  onNavigate: () => void;
-}) {
+function NavItem({ item, onNavigate }: { item: SidebarItem; onNavigate: () => void }) {
   const [expanded, setExpanded] = useState(true);
   const Icon = item.icon;
   const hasChildren = !!item.children?.length;
@@ -99,12 +87,7 @@ function NavItem({
       {hasChildren && expanded && (
         <div className="ml-[21px] mt-1 space-y-0.5 border-l border-slate-200 pl-3">
           {item.children!.map(({ to, label, icon: ChildIcon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={onNavigate}
-              className={childClass}
-            >
+            <NavLink key={to} to={to} onClick={onNavigate} className={childClass}>
               {ChildIcon && <ChildIcon size={14} className="shrink-0" />}
               <span className="truncate">{label}</span>
             </NavLink>
@@ -166,9 +149,7 @@ export function Sidebar({
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
               <LifeBuoy size={20} />
             </span>
-            <span className="text-base font-bold text-slate-900">
-              {appName}
-            </span>
+            <span className="text-base font-bold text-slate-900">{appName}</span>
           </Link>
           <button
             onClick={onClose}
@@ -183,10 +164,7 @@ export function Sidebar({
           {loading ? (
             <div className="space-y-2 pt-2">
               {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="h-9 animate-pulse rounded-lg bg-slate-200/70"
-                />
+                <div key={i} className="h-9 animate-pulse rounded-lg bg-slate-200/70" />
               ))}
             </div>
           ) : (
@@ -215,20 +193,14 @@ export function Sidebar({
         {user && (
           <div className="flex shrink-0 items-center gap-3 border-t border-slate-200 p-3">
             {user.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt=""
-                className="h-10 w-10 rounded-full object-cover"
-              />
+              <img src={user.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
             ) : (
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600">
                 {user.displayName.charAt(0).toUpperCase()}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">
-                {user.displayName}
-              </p>
+              <p className="truncate text-sm font-semibold text-slate-900">{user.displayName}</p>
               <p className="truncate text-xs text-slate-500">{user.email}</p>
             </div>
             <button

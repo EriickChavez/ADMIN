@@ -1,24 +1,21 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { ApiError } from "../../../api/client";
-import type { Tournament, TournamentInput } from "../types";
+import type {
+  Tournament,
+  TournamentFormValues,
+  TournamentInput,
+} from "../types";
 
 interface TournamentFormProps {
   initial?: Tournament | null;
   submitLabel: string;
   submittingLabel: string;
   onSubmit: (input: TournamentInput) => Promise<void>;
+  onValuesChange?: (values: TournamentFormValues) => void;
 }
 
-interface Values {
-  name: string;
-  subtitle: string;
-  description: string;
-  slug: string;
-  startDate: string;
-  endDate: string;
-  timezone: string;
-}
+type Values = TournamentFormValues;
 
 type Errors = Partial<Record<keyof Values, string>>;
 
@@ -54,7 +51,7 @@ function validate(values: Values): Errors {
 }
 
 const inputClass = (hasError: boolean) =>
-  `w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
+  `w-full min-w-0 rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
     hasError
       ? "border-red-300 focus:border-red-400 focus:ring-red-100"
       : "border-slate-300 focus:border-blue-500 focus:ring-blue-100"
@@ -76,7 +73,7 @@ function Field({
   children: ReactNode;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <label
         htmlFor={htmlFor}
         className="mb-1.5 block text-sm font-medium text-slate-700"
@@ -90,7 +87,9 @@ function Field({
       {error ? (
         <p className="mt-1.5 text-xs text-red-600">{error}</p>
       ) : (
-        hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>
+        hint && (
+          <p className="mt-1.5 break-words text-xs text-slate-500">{hint}</p>
+        )
       )}
     </div>
   );
@@ -101,6 +100,7 @@ export function TournamentForm({
   submitLabel,
   submittingLabel,
   onSubmit,
+  onValuesChange,
 }: TournamentFormProps) {
   const isEdit = !!initial;
 
@@ -125,6 +125,10 @@ export function TournamentForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    onValuesChange?.(values);
+  }, [values, onValuesChange]);
 
   const clientErrors = validate(values);
   const visibleError = (field: keyof Values) =>
@@ -184,7 +188,7 @@ export function TournamentForm({
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+      className="space-y-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
     >
       <Field label="Nombre" htmlFor="name" error={visibleError("name")}>
         <input
@@ -241,7 +245,7 @@ export function TournamentForm({
         />
       </Field>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Fecha de inicio" htmlFor="startDate" optional>
           <input
             id="startDate"
@@ -294,7 +298,7 @@ export function TournamentForm({
         </p>
       )}
 
-      <div className="flex items-center gap-4 pt-1">
+      <div className="flex flex-wrap items-center gap-4 pt-1">
         <button
           type="submit"
           disabled={submitting}

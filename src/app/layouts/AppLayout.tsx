@@ -11,9 +11,7 @@ const APP_NAME = "Nova";
 export function AppLayout() {
   const { user, logout } = useAuth();
   const { tournament, isLoading } = useMyTournament();
-  const { categories, isLoading: loadingCategories } = useCategories(
-    tournament?.id,
-  );
+  const { categories, isLoading: loadingCategories } = useCategories(tournament?.id);
   const [open, setOpen] = useState(false);
   const closeSidebar = useCallback(() => setOpen(false), []);
 
@@ -29,10 +27,10 @@ export function AppLayout() {
               icon: Layers,
               children: loadingCategories
                 ? []
-                : categories.map((c) => ({
-                    to: `/categories/${c.id}`,
-                    label: c.title,
-                  })),
+                : [
+                    ...categories.map((c) => ({ to: `/categories/${c.id}`, label: c.title })),
+                    { to: "/categories/new", label: "Nueva categoría", icon: Plus },
+                  ],
             },
             { to: "/calendar", label: "Calendario", icon: CalendarDays },
           ],
@@ -47,7 +45,7 @@ export function AppLayout() {
       ];
 
   return (
-    <div className="min-h-dvh bg-white">
+    <div className="min-h-dvh bg-slate-100">
       <Sidebar
         appName={APP_NAME}
         sections={sections}
@@ -70,7 +68,7 @@ export function AppLayout() {
           <span className="font-bold text-slate-900">{APP_NAME}</span>
         </header>
 
-        <main className="p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pt-8">
           <Outlet />
         </main>
       </div>
