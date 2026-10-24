@@ -58,10 +58,10 @@ function validate(values: TeamFormValues): Errors {
   const errors: Errors = {};
   if (!values.categoryId) errors.categoryId = "Elige una categoría";
   if (!values.name.trim()) errors.name = "El nombre es obligatorio";
+  // API: abbreviation es opcional, max 50
   const abbr = values.abbreviation.trim();
-  if (!abbr) errors.abbreviation = "La abreviatura es obligatoria";
-  else if (abbr.length > 5) {
-    errors.abbreviation = "Máximo 5 caracteres";
+  if (abbr.length > 50) {
+    errors.abbreviation = "Máximo 50 caracteres";
   }
   return errors;
 }
@@ -109,7 +109,7 @@ export function TeamForm({
       await onSubmit({
         categoryId: values.categoryId,
         name: values.name.trim(),
-        abbreviation: values.abbreviation.trim().toUpperCase(),
+        abbreviation: values.abbreviation.trim().toUpperCase() || "",
       });
     } catch (err) {
       if (err instanceof ApiError) setFormError(err.message);
@@ -163,24 +163,18 @@ export function TeamForm({
         label="Abreviatura"
         htmlFor="team-abbr"
         error={visibleError("abbreviation")}
-        hint="Hasta 5 caracteres (ej. AGU)"
+        hint="Opcional · hasta 50 caracteres (ej. AGU)"
       >
         <input
           id="team-abbr"
           value={values.abbreviation}
           onChange={(e) =>
-            setField(
-              "abbreviation",
-              e.target.value
-                .toUpperCase()
-                .replace(/[^A-Z0-9]/g, "")
-                .slice(0, 5),
-            )
+            setField("abbreviation", e.target.value.toUpperCase().slice(0, 50))
           }
           onBlur={blur("abbreviation")}
           className={inputClass(!!visibleError("abbreviation"))}
           placeholder="AGU"
-          maxLength={5}
+          maxLength={50}
           autoComplete="off"
         />
       </Field>

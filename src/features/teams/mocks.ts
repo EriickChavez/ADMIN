@@ -80,18 +80,11 @@ export const teamsHandlers = [
 
             const body = (await request.json()) as TeamInput;
             const name = body.name?.trim();
-            const abbreviation = body.abbreviation?.trim().toUpperCase();
+            const abbreviation = body.abbreviation?.trim().toUpperCase() ?? "";
             const categoryId = body.categoryId;
 
             if (!name) {
                 return errorResponse(400, "VALIDATION_ERROR", "El nombre es obligatorio");
-            }
-            if (!abbreviation) {
-                return errorResponse(
-                    400,
-                    "VALIDATION_ERROR",
-                    "La abreviatura es obligatoria",
-                );
             }
             if (!categoryId) {
                 return errorResponse(
@@ -100,11 +93,11 @@ export const teamsHandlers = [
                     "La categoría es obligatoria",
                 );
             }
-            if (abbreviation.length > 5) {
+            if (abbreviation && abbreviation.length > 50) {
                 return errorResponse(
                     400,
                     "VALIDATION_ERROR",
-                    "La abreviatura máximo 5 caracteres",
+                    "La abreviatura máximo 50 caracteres",
                 );
             }
 
@@ -113,7 +106,7 @@ export const teamsHandlers = [
                 tournamentId: params.tournamentId as string,
                 categoryId,
                 name,
-                abbreviation,
+                abbreviation: abbreviation || name.slice(0, 3).toUpperCase(),
                 logoUrl: body.logoUrl ?? null,
             };
 
@@ -144,18 +137,11 @@ export const teamsHandlers = [
         if (!name) {
             return errorResponse(400, "VALIDATION_ERROR", "El nombre es obligatorio");
         }
-        if (!abbreviation) {
+        if (abbreviation.length > 50) {
             return errorResponse(
                 400,
                 "VALIDATION_ERROR",
-                "La abreviatura es obligatoria",
-            );
-        }
-        if (abbreviation.length > 5) {
-            return errorResponse(
-                400,
-                "VALIDATION_ERROR",
-                "La abreviatura máximo 5 caracteres",
+                "La abreviatura máximo 50 caracteres",
             );
         }
 

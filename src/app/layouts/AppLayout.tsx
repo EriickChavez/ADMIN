@@ -7,6 +7,7 @@ import {
   Menu,
   Plus,
   Settings,
+  UserRound,
   Users,
 } from "lucide-react";
 import { useAuth } from "../../features/auth";
@@ -44,6 +45,7 @@ export function AppLayout() {
                   })),
             },
             { to: "/teams", label: "Equipos", icon: Users },
+            { to: "/players", label: "Jugadores", icon: UserRound },
             { to: "/calendar", label: "Calendario", icon: CalendarDays },
           ],
         },

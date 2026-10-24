@@ -7,6 +7,18 @@ import type {
     TeamsResponse,
 } from "../types";
 
+function toBody(input: Partial<TeamInput>) {
+    const body: Record<string, unknown> = {};
+    if (input.categoryId !== undefined) body.categoryId = input.categoryId;
+    if (input.name !== undefined) body.name = input.name;
+    if (input.abbreviation !== undefined && input.abbreviation !== "") {
+        body.abbreviation = input.abbreviation;
+    }
+    // logoUrl solo si es URL válida; la API valida z.string().url()
+    if (input.logoUrl) body.logoUrl = input.logoUrl;
+    return body;
+}
+
 export const teamsService = {
     listByTournament: async (
         tournamentId: string,
@@ -28,13 +40,13 @@ export const teamsService = {
     create: async (tournamentId: string, input: TeamInput): Promise<Team> => {
         const { data } = await api.post<TeamResponse>(
             `/tournaments/${tournamentId}/teams`,
-            input,
+            toBody(input),
         );
         return data.team;
     },
 
     update: async (id: string, input: Partial<TeamInput>): Promise<Team> => {
-        const { data } = await api.patch<TeamResponse>(`/teams/${id}`, input);
+        const { data } = await api.patch<TeamResponse>(`/teams/${id}`, toBody(input));
         return data.team;
     },
 

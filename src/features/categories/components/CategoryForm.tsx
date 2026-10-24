@@ -71,14 +71,14 @@ function validate(values: CategoryFormValues): Errors {
 
   if (values.minAge.trim() && Number.isNaN(min)) {
     errors.minAge = "Ingresa un número válido";
-  } else if (min != null && (min < 0 || min > 99)) {
-    errors.minAge = "Usa un valor entre 0 y 99";
+  } else if (min != null && (min < 0 || min > 120)) {
+    errors.minAge = "Usa un valor entre 0 y 120";
   }
 
   if (values.maxAge.trim() && Number.isNaN(max)) {
     errors.maxAge = "Ingresa un número válido";
-  } else if (max != null && (max < 0 || max > 99)) {
-    errors.maxAge = "Usa un valor entre 0 y 99";
+  } else if (max != null && (max < 0 || max > 120)) {
+    errors.maxAge = "Usa un valor entre 0 y 120";
   }
 
   if (
@@ -183,7 +183,7 @@ export function CategoryForm({
             id="cat-min"
             type="number"
             min={0}
-            max={99}
+            max={120}
             value={values.minAge}
             onChange={(e) => setField("minAge", e.target.value)}
             onBlur={blur("minAge")}
@@ -201,7 +201,7 @@ export function CategoryForm({
             id="cat-max"
             type="number"
             min={0}
-            max={99}
+            max={120}
             value={values.maxAge}
             onChange={(e) => setField("maxAge", e.target.value)}
             onBlur={blur("maxAge")}

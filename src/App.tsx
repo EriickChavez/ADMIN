@@ -11,6 +11,11 @@ import {
   CategoryNewPage,
 } from "./features/categories";
 import { HomePage } from "./features/home";
+import {
+  PlayerDetailPage,
+  PlayerNewPage,
+  PlayersPage,
+} from "./features/players";
 import { TeamDetailPage, TeamNewPage, TeamsPage } from "./features/teams";
 import { BrandingPage, TournamentPage } from "./features/tournaments";
 import { AppLayout } from "./app/layouts/AppLayout";
@@ -34,6 +39,9 @@ export default function App() {
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/teams/new" element={<TeamNewPage />} />
           <Route path="/teams/:id" element={<TeamDetailPage />} />
+          <Route path="/players" element={<PlayersPage />} />
+          <Route path="/players/new" element={<PlayerNewPage />} />
+          <Route path="/players/:id" element={<PlayerDetailPage />} />
         </Route>
       </Route>
 
