@@ -1,30 +1,65 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Outlet } from "react-router-dom";
-import { Home, Menu, Trophy } from "lucide-react";
+import { CalendarDays, Layers, Menu, Plus, Settings } from "lucide-react";
 import { useAuth } from "../../features/auth";
-import { Sidebar, type SidebarItem } from "../../shared/components/Sidebar";
+import { useCategories } from "../../features/categories";
+import { useMyTournament } from "../../features/tournaments";
+import { Sidebar, type SidebarSection } from "../../shared/components/Sidebar";
 
-const items: SidebarItem[] = [
-  { to: "/", label: "Inicio", icon: Home },
-  { to: "/tournaments", label: "Torneos", icon: Trophy },
-];
+const APP_NAME = "Nova";
 
 export function AppLayout() {
   const { user, logout } = useAuth();
+  const { tournament, isLoading } = useMyTournament();
+  const { categories, isLoading: loadingCategories } = useCategories(
+    tournament?.id,
+  );
   const [open, setOpen] = useState(false);
+  const closeSidebar = useCallback(() => setOpen(false), []);
+
+  const sections: SidebarSection[] = tournament
+    ? [
+        {
+          title: "Torneo",
+          items: [
+            { to: "/tournament", label: "Tu torneo", icon: Settings },
+            {
+              to: "/categories",
+              label: "Categorías",
+              icon: Layers,
+              children: loadingCategories
+                ? []
+                : categories.map((c) => ({
+                    to: `/categories/${c.id}`,
+                    label: c.title,
+                  })),
+            },
+            { to: "/calendar", label: "Calendario", icon: CalendarDays },
+          ],
+        },
+      ]
+    : [
+        {
+          title: "Torneo",
+          items: [{ to: "/tournament", label: "Crear torneo", icon: Plus }],
+          hint: "Crea tu torneo para desbloquear categorías y calendario.",
+        },
+      ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-dvh bg-white">
       <Sidebar
-        items={items}
+        appName={APP_NAME}
+        sections={sections}
+        loading={isLoading}
         user={user}
         onLogout={() => logout()}
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={closeSidebar}
       />
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-slate-200 bg-white px-4 lg:hidden">
+        <header className="sticky top-0 z-20 flex min-h-14 items-center gap-2 border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] lg:hidden">
           <button
             onClick={() => setOpen(true)}
             aria-label="Abrir menú"
@@ -32,10 +67,10 @@ export function AppLayout() {
           >
             <Menu size={20} />
           </button>
-          <span className="font-bold text-indigo-600">Mi App</span>
+          <span className="font-bold text-slate-900">{APP_NAME}</span>
         </header>
 
-        <main className="p-6">
+        <main className="p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <Outlet />
         </main>
       </div>

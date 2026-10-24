@@ -1,16 +1,16 @@
 import { http, HttpResponse } from "msw";
 import { API_URL } from "../../api/client";
 import { errorResponse } from "../../mocks/utils";
+import { DEMO_USER_ID, SESSION_KEY } from "../../mocks/session";
 import type { LoginRequest, RegisterRequest, User } from "./types";
 
 type StoredUser = User & { password: string };
 
 const USERS_KEY = "mock_users";
-const SESSION_KEY = "mock_session_user_id";
 
 const seed: StoredUser[] = [
   {
-    id: "00000000-0000-0000-0000-000000000001",
+    id: DEMO_USER_ID,
     email: "demo@example.com",
     displayName: "Usuario Demo",
     avatarUrl: null,

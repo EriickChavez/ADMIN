@@ -5,6 +5,7 @@ import {
   ProtectedRoute,
   RegisterPage,
 } from "./features/auth";
+import { TournamentPage } from "./features/tournaments";
 import { HomePage } from "./features/home/HomePage";
 import { AppLayout } from "./app/layouts/AppLayout";
 
@@ -19,6 +20,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/tournament" element={<TournamentPage />} />
         </Route>
       </Route>
 
