@@ -5,6 +5,11 @@ import {
   ProtectedRoute,
   RegisterPage,
 } from "./features/auth";
+import {
+  CategoriesPage,
+  CategoryDetailPage,
+  CategoryNewPage,
+} from "./features/categories";
 import { HomePage } from "./features/home";
 import { BrandingPage, TournamentPage } from "./features/tournaments";
 import { AppLayout } from "./app/layouts/AppLayout";
@@ -22,6 +27,9 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/tournament" element={<TournamentPage />} />
           <Route path="/tournament/branding" element={<BrandingPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/categories/new" element={<CategoryNewPage />} />
+          <Route path="/categories/:id" element={<CategoryDetailPage />} />
         </Route>
       </Route>
 

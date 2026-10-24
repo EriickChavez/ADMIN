@@ -37,17 +37,10 @@ export function AppLayout() {
               icon: Layers,
               children: loadingCategories
                 ? []
-                : [
-                    ...categories.map((c) => ({
-                      to: `/categories/${c.id}`,
-                      label: c.title,
-                    })),
-                    {
-                      to: "/categories/new",
-                      label: "Nueva categoría",
-                      icon: Plus,
-                    },
-                  ],
+                : categories.map((c) => ({
+                    to: `/categories/${c.id}`,
+                    label: c.title,
+                  })),
             },
             { to: "/calendar", label: "Calendario", icon: CalendarDays },
           ],
