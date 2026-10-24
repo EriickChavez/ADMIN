@@ -5,12 +5,14 @@ import {
   Check,
   Clock,
   Globe,
+  ImageIcon,
   Layers,
   Plus,
   Settings,
   Trophy,
   type LucideIcon,
 } from "lucide-react";
+import { API_URL } from "../../api/client";
 import { useAuth } from "../auth";
 import { useCategories, type Category } from "../categories";
 import { useMyTournament, type Tournament } from "../tournaments";
@@ -38,6 +40,11 @@ const getInitials = (name: string) =>
     .map((word) => word[0])
     .join("")
     .toUpperCase();
+
+const assetUrl = (path: string) =>
+  /^https?:\/\//.test(path) || path.startsWith("data:")
+    ? path
+    : `${API_URL}${path}`;
 
 const getDurationDays = (t: Tournament): number | null => {
   if (!t.startDate || !t.endDate) return null;
@@ -197,6 +204,14 @@ export function HomePage() {
       to: "/tournament",
     },
     {
+      title: "Personaliza el branding",
+      description: "Sube logo y banner de tu torneo.",
+      done: !!(
+        tournament?.branding?.logoUrl || tournament?.branding?.bannerUrl
+      ),
+      to: "/tournament/branding",
+    },
+    {
       title: "Crea tus categorías",
       description: "Por ejemplo Sub-14 o Sub-18.",
       done: categories.length > 0,
@@ -243,41 +258,86 @@ export function HomePage() {
         <div className="min-w-0 space-y-6 lg:col-span-2">
           {tournament ? (
             <>
-              <Card>
-                <div className="flex items-start gap-4 p-6">
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white">
-                    {getInitials(tournament.name)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-lg font-semibold text-slate-900">
-                      {tournament.name}
-                    </h2>
-                    {tournament.subtitle && (
-                      <p className="truncate text-sm text-slate-500">
-                        {tournament.subtitle}
-                      </p>
-                    )}
-                    <p className="mt-1 truncate text-xs text-slate-400">
-                      {tournament.slug}
-                    </p>
+              <Card className="overflow-hidden">
+                <div
+                  className="relative h-32 sm:h-36"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(135deg, #2563eb, #4f46e5)",
+                  }}
+                >
+                  {tournament.branding?.bannerUrl ? (
+                    <img
+                      src={assetUrl(tournament.branding.bannerUrl)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 opacity-30">
+                      <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/20" />
+                      <div className="absolute -bottom-10 left-10 h-32 w-32 rounded-full bg-white/10" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative px-5 sm:px-6">
+                  <div className="flex flex-col gap-4 pb-5 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="flex min-w-0 items-end gap-4">
+                      <span className="-mt-10 flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-blue-600 text-lg font-bold text-white shadow-md ring-1 ring-slate-200/60">
+                        {tournament.branding?.logoUrl ? (
+                          <img
+                            src={assetUrl(tournament.branding.logoUrl)}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          getInitials(tournament.name)
+                        )}
+                      </span>
+                      <div className="min-w-0 pb-0.5 pt-3 sm:pt-0">
+                        <h2 className="truncate text-lg font-semibold tracking-tight text-slate-900">
+                          {tournament.name}
+                        </h2>
+                        {tournament.subtitle ? (
+                          <p className="truncate text-sm text-slate-500">
+                            {tournament.subtitle}
+                          </p>
+                        ) : (
+                          <p className="truncate text-xs text-slate-400">
+                            {tournament.slug}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 gap-2">
+                      <ButtonLink
+                        to="/tournament/branding"
+                        variant="secondary"
+                        className="!px-3"
+                      >
+                        <ImageIcon size={16} />
+                        <span className="hidden sm:inline">Branding</span>
+                      </ButtonLink>
+                      <ButtonLink
+                        to="/tournament"
+                        variant="secondary"
+                        className="!px-3"
+                      >
+                        <Settings size={16} />
+                        <span className="hidden sm:inline">Editar</span>
+                      </ButtonLink>
+                    </div>
                   </div>
-                  <ButtonLink
-                    to="/tournament"
-                    variant="secondary"
-                    className="shrink-0"
-                  >
-                    <Settings size={16} />
-                    Editar
-                  </ButtonLink>
                 </div>
 
                 {tournament.description && (
-                  <p className="px-6 pb-5 text-sm leading-relaxed text-slate-600">
+                  <p className="border-t border-slate-100 px-5 py-4 text-sm leading-relaxed text-slate-600 sm:px-6">
                     {tournament.description}
                   </p>
                 )}
 
-                <dl className="grid grid-cols-1 gap-5 border-t border-slate-100 p-6 sm:grid-cols-3">
+                <dl className="grid grid-cols-1 gap-5 border-t border-slate-100 px-5 py-5 sm:grid-cols-3 sm:px-6">
                   <div className="min-w-0">
                     <dt className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
                       <CalendarDays size={14} /> Inicio

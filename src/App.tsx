@@ -1,7 +1,12 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { GuestRoute, LoginPage, ProtectedRoute, RegisterPage } from "./features/auth";
+import {
+  GuestRoute,
+  LoginPage,
+  ProtectedRoute,
+  RegisterPage,
+} from "./features/auth";
 import { HomePage } from "./features/home";
-import { TournamentPage } from "./features/tournaments";
+import { BrandingPage, TournamentPage } from "./features/tournaments";
 import { AppLayout } from "./app/layouts/AppLayout";
 
 export default function App() {
@@ -16,6 +21,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/tournament" element={<TournamentPage />} />
+          <Route path="/tournament/branding" element={<BrandingPage />} />
         </Route>
       </Route>
 
