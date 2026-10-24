@@ -1,12 +1,19 @@
-import { api } from "../../../api/client";
+import { api, ApiError } from "../../../api/client";
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "../types";
+
+const extractUser = (data: AuthResponse | undefined): User => {
+  if (!data?.user) {
+    throw new ApiError(500, "INVALID_RESPONSE", "Respuesta inesperada del servidor");
+  }
+  return data.user;
+};
 
 export const authService = {
   register: async (data: RegisterRequest): Promise<User> =>
-    (await api.post<AuthResponse>("/auth/register", data)).data.user,
+    extractUser((await api.post<AuthResponse>("/auth/register", data)).data),
 
   login: async (data: LoginRequest): Promise<User> =>
-    (await api.post<AuthResponse>("/auth/login", data)).data.user,
+    extractUser((await api.post<AuthResponse>("/auth/login", data)).data),
 
   logout: async (): Promise<void> => {
     await api.post("/auth/logout");
@@ -17,5 +24,5 @@ export const authService = {
   },
 
   me: async (): Promise<User> =>
-    (await api.get<AuthResponse>("/auth/me")).data.user,
+    extractUser((await api.get<AuthResponse>("/auth/me")).data),
 };

@@ -1,3 +1,4 @@
+import "./index.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -9,8 +10,15 @@ const queryClient = new QueryClient();
 
 async function enableMocks() {
   if (import.meta.env.VITE_USE_MOCKS !== "true") return;
-  const { worker } = await import("./mocks/browser");
-  await worker.start({ onUnhandledFrame: "bypass" });
+  try {
+    const { worker } = await import("./mocks/browser");
+    await worker.start({ onUnhandledFrame: "bypass" });
+  } catch (error) {
+    console.error(
+      "[MSW] No arrancó. Corre `npx msw init public/ --save` y reinicia el servidor.",
+      error,
+    );
+  }
 }
 
 enableMocks().then(() => {

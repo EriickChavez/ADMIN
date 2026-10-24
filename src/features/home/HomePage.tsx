@@ -1,13 +1,14 @@
 import { useAuth } from "../auth";
 
 export function HomePage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
-    <main>
-      <h1>Hola, {user?.displayName}</h1>
-      <p>{user?.email}</p>
-      <button onClick={() => logout()}>Cerrar sesión</button>
-    </main>
+    <div>
+      <h1 className="text-2xl font-bold text-slate-900">
+        Hola, {user?.displayName}
+      </h1>
+      <p className="mt-1 text-slate-500">Bienvenido de nuevo.</p>
+    </div>
   );
 }

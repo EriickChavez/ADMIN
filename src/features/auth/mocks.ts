@@ -5,9 +5,10 @@ import type { LoginRequest, RegisterRequest, User } from "./types";
 
 type StoredUser = User & { password: string };
 
+const USERS_KEY = "mock_users";
 const SESSION_KEY = "mock_session_user_id";
 
-const users: StoredUser[] = [
+const seed: StoredUser[] = [
   {
     id: "00000000-0000-0000-0000-000000000001",
     email: "demo@example.com",
@@ -18,16 +19,30 @@ const users: StoredUser[] = [
   },
 ];
 
+const getUsers = (): StoredUser[] => {
+  try {
+    const raw = localStorage.getItem(USERS_KEY);
+    if (raw) return JSON.parse(raw) as StoredUser[];
+  } catch {
+    // si el JSON está corrupto, se usa el seed
+  }
+  return seed;
+};
+
+const saveUsers = (users: StoredUser[]) =>
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
 const toPublic = ({ password: _password, ...user }: StoredUser): User => user;
 
 const currentUser = () => {
   const id = localStorage.getItem(SESSION_KEY);
-  return users.find((u) => u.id === id) ?? null;
+  return getUsers().find((u) => u.id === id) ?? null;
 };
 
 export const authHandlers = [
   http.post(`${API_URL}/auth/register`, async ({ request }) => {
     const body = (await request.json()) as RegisterRequest;
+    const users = getUsers();
     if (users.some((u) => u.email === body.email)) {
       return errorResponse(409, "EMAIL_ALREADY_EXISTS", "El correo ya está registrado");
     }
@@ -39,14 +54,16 @@ export const authHandlers = [
       isActive: true,
       password: body.password,
     };
-    users.push(user);
+    saveUsers([...users, user]);
     localStorage.setItem(SESSION_KEY, user.id);
     return HttpResponse.json({ user: toPublic(user) }, { status: 201 });
   }),
 
   http.post(`${API_URL}/auth/login`, async ({ request }) => {
     const body = (await request.json()) as LoginRequest;
-    const user = users.find((u) => u.email === body.email && u.password === body.password);
+    const user = getUsers().find(
+      (u) => u.email === body.email && u.password === body.password
+    );
     if (!user) {
       return errorResponse(401, "INVALID_CREDENTIALS", "Correo o contraseña incorrectos");
     }

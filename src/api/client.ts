@@ -3,6 +3,12 @@ import type { ApiErrorBody } from "./types";
 
 export const API_URL = import.meta.env.VITE_API_URL as string;
 
+if (!API_URL) {
+  console.error(
+    "[api] Falta VITE_API_URL. Crea un .env (copia .env.example) y reinicia `npm run dev`."
+  );
+}
+
 export const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
@@ -10,13 +16,21 @@ export const api = axios.create({
 });
 
 export class ApiError extends Error {
+  status: number;
+  code: string;
+  details: unknown[];
+
   constructor(
-    public status: number,
-    public code: string,
+    status: number,
+    code: string,
     message: string,
-    public details: unknown[] = []
+    details: unknown[] = []
   ) {
     super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
   }
 }
 

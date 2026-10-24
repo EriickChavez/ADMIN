@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     retry: false,
     staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 
   const setUser = (u: User) => qc.setQueryData(ME_KEY, u);
@@ -41,10 +42,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     qc.setQueryData(ME_KEY, null);
   };
 
-  const loginMutation = useMutation({ mutationFn: authService.login, onSuccess: setUser });
-  const registerMutation = useMutation({ mutationFn: authService.register, onSuccess: setUser });
-  const logoutMutation = useMutation({ mutationFn: authService.logout, onSuccess: clearSession });
-  const logoutAllMutation = useMutation({ mutationFn: authService.logoutAll, onSuccess: clearSession });
+  const loginMutation = useMutation({
+    mutationFn: authService.login,
+    onSuccess: setUser,
+  });
+  const registerMutation = useMutation({
+    mutationFn: authService.register,
+    onSuccess: setUser,
+  });
+  const logoutMutation = useMutation({
+    mutationFn: authService.logout,
+    onSuccess: clearSession,
+  });
+  const logoutAllMutation = useMutation({
+    mutationFn: authService.logoutAll,
+    onSuccess: clearSession,
+  });
 
   return (
     <AuthContext.Provider
