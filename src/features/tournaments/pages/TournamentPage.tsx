@@ -39,8 +39,8 @@ export function TournamentPage() {
           <div className="h-4 w-72 max-w-full animate-pulse rounded-lg bg-slate-200/70" />
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="h-[34rem] animate-pulse rounded-xl bg-slate-200/70 lg:col-span-2" />
-          <div className="h-80 animate-pulse rounded-xl bg-slate-200/70" />
+          <div className="order-first h-80 animate-pulse rounded-xl bg-slate-200/70 lg:order-none lg:col-start-3 lg:row-start-1" />
+          <div className="h-[34rem] animate-pulse rounded-xl bg-slate-200/70 lg:col-span-2 lg:row-start-1" />
         </div>
       </div>
     );
@@ -105,7 +105,7 @@ export function TournamentPage() {
           />
         </div>
 
-        <aside className="min-w-0">
+        <aside className="order-first min-w-0 lg:order-none">
           <div className="lg:sticky lg:top-8">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
               Vista previa
