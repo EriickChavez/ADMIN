@@ -7,6 +7,7 @@ import {
   Menu,
   Plus,
   Settings,
+  Users,
 } from "lucide-react";
 import { useAuth } from "../../features/auth";
 import { useCategories } from "../../features/categories";
@@ -42,6 +43,7 @@ export function AppLayout() {
                     label: c.title,
                   })),
             },
+            { to: "/teams", label: "Equipos", icon: Users },
             { to: "/calendar", label: "Calendario", icon: CalendarDays },
           ],
         },
