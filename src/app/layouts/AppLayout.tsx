@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Outlet } from "react-router-dom";
 import {
   CalendarDays,
+  GitBranch,
   ImageIcon,
   Layers,
   Menu,
@@ -47,6 +48,7 @@ export function AppLayout() {
             { to: "/teams", label: "Equipos", icon: Users },
             { to: "/players", label: "Jugadores", icon: UserRound },
             { to: "/calendar", label: "Calendario", icon: CalendarDays },
+            { to: "/phases", label: "Fases", icon: GitBranch },
           ],
         },
       ]
