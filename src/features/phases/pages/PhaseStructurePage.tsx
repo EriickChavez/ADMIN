@@ -5,6 +5,7 @@ import { PageHeader } from "../../../shared/components/ui/PageHeader";
 import { useMyTournament } from "../../tournaments";
 import { PhaseStructure } from "../components/PhaseStructure";
 import { usePhase } from "../hooks";
+import { PhaseWorkspaceNav } from "../components/PhaseWorkspaceNav";
 
 export function PhaseStructurePage() {
   const { id } = useParams<{ id: string }>();
@@ -66,6 +67,7 @@ export function PhaseStructurePage() {
         }
       />
 
+      <PhaseWorkspaceNav phase={phase} current="structure" />
       <PhaseStructure phase={phase} />
     </div>
   );

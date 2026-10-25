@@ -5,6 +5,7 @@ import { PageHeader } from "../../../shared/components/ui/PageHeader";
 import { useMyTournament } from "../../tournaments";
 import { PhaseFixtures } from "../components/PhaseFixtures";
 import { usePhase } from "../hooks";
+import { PhaseWorkspaceNav } from "../components/PhaseWorkspaceNav";
 
 export function PhaseFixturesPage() {
   const { id } = useParams<{ id: string }>();
@@ -62,6 +63,7 @@ export function PhaseFixturesPage() {
         description="Genera los partidos de todos contra todos de cada grupo."
       />
 
+      <PhaseWorkspaceNav phase={phase} current="fixtures" />
       <PhaseFixtures phase={phase} />
     </div>
   );

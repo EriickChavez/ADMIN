@@ -8,6 +8,7 @@ import { useMyTournament } from "../../tournaments";
 import { PhaseForm } from "../components/PhaseForm";
 import { useDeletePhase, usePhase, useUpdatePhase } from "../hooks";
 import { getPhaseErrorMessage } from "../utils/errors";
+import { PhaseWorkspaceNav } from "../components/PhaseWorkspaceNav";
 
 export function PhaseEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -82,6 +83,8 @@ export function PhaseEditPage() {
         title="Editar fase"
         description="Edita o elimina esta fase."
       />
+
+      <PhaseWorkspaceNav phase={phase} current="edit" />
 
       {saved && (
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
