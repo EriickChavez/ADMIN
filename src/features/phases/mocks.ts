@@ -4,7 +4,11 @@ import { DEMO_TOURNAMENT_ID, getSessionUserId } from "../../mocks/session";
 import { errorResponse } from "../../mocks/utils";
 import type { Phase, PhaseInput, PhaseStatus, PhaseType } from "./types";
 
+import type { Match } from "../matches/types";
+
 const STORAGE_KEY = "mock_phases";
+const MATCHES_KEY = "mock_matches";
+
 const now = () => new Date().toISOString();
 
 const seed: Phase[] = [
@@ -144,15 +148,51 @@ export const phasesHandlers = [
 
     http.delete(`${API_URL}/phases/:id`, ({ params }) => {
         if (!getSessionUserId()) {
-            return errorResponse(401, "UNAUTHORIZED", "No hay sesión activa");
+            return errorResponse(
+                401,
+                "UNAUTHORIZED",
+                "No hay sesión activa",
+            );
         }
 
         const all = getAll();
-        if (!all.some((p) => p.id === params.id)) {
-            return errorResponse(404, "PHASE_NOT_FOUND", "Fase no encontrada");
+
+        if (!all.some((phase) => phase.id === params.id)) {
+            return errorResponse(
+                404,
+                "PHASE_NOT_FOUND",
+                "Fase no encontrada",
+            );
         }
 
-        saveAll(all.filter((p) => p.id !== params.id));
-        return HttpResponse.json({ message: "Phase deleted successfully" });
+        let matches: Match[] = [];
+
+        try {
+            const raw = localStorage.getItem(MATCHES_KEY);
+
+            if (raw) {
+                matches = JSON.parse(raw) as Match[];
+            }
+        } catch {
+            return errorResponse(
+                500,
+                "MOCK_STORAGE_ERROR",
+                "No se pudieron verificar los partidos de la fase.",
+            );
+        }
+
+        if (matches.some((match) => match.phaseId === params.id)) {
+            return errorResponse(
+                409,
+                "PHASE_HAS_MATCHES",
+                "No se puede eliminar una fase que todavía tiene partidos",
+            );
+        }
+
+        saveAll(all.filter((phase) => phase.id !== params.id));
+
+        return HttpResponse.json({
+            message: "Phase deleted successfully",
+        });
     }),
 ];

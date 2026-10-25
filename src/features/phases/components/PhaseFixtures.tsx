@@ -2,7 +2,7 @@ import { CalendarDays } from "lucide-react";
 import { ButtonLink } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { EmptyState } from "../../../shared/components/ui/EmptyState";
-import { useTeams } from "../../teams";
+import { useAllTeams } from "../../teams";
 import { usePhaseGroups, usePhaseTeams } from "../hooks";
 import type { Phase } from "../types";
 import { PhaseFixturesPanel } from "./PhaseFixturesPanel";
@@ -10,13 +10,13 @@ import { PhaseFixturesPanel } from "./PhaseFixturesPanel";
 export function PhaseFixtures({ phase }: { phase: Phase }) {
   const groupsQuery = usePhaseGroups(phase.id);
   const phaseTeamsQuery = usePhaseTeams(phase.id);
-  const teamsQuery = useTeams(phase.tournamentId, {
+  const teamsQuery = useAllTeams(phase.tournamentId, {
     categoryId: phase.categoryId,
-    limit: 100,
   });
 
   const loading =
     groupsQuery.isLoading || phaseTeamsQuery.isLoading || teamsQuery.isLoading;
+
   const failed =
     groupsQuery.isError || phaseTeamsQuery.isError || teamsQuery.isError;
 
@@ -35,7 +35,7 @@ export function PhaseFixtures({ phase }: { phase: Phase }) {
 
   const hasGroupedTeams =
     groupsQuery.groups.length > 0 &&
-    phaseTeamsQuery.assignments.some((a) => !!a.phaseGroupId);
+    phaseTeamsQuery.assignments.some((assignment) => !!assignment.phaseGroupId);
 
   if (!hasGroupedTeams) {
     return (

@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { Outlet } from "react-router-dom";
 import {
   CalendarDays,
-  GitBranch,
   ImageIcon,
   Layers,
   Menu,
@@ -11,7 +10,6 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
-
 import { useAuth } from "../../features/auth";
 import { useCategories } from "../../features/categories";
 import { useMyTournament } from "../../features/tournaments";
@@ -21,15 +19,11 @@ const APP_NAME = "Nova";
 
 export function AppLayout() {
   const { user, logout } = useAuth();
-
   const { tournament, isLoading } = useMyTournament();
-
   const { categories, isLoading: loadingCategories } = useCategories(
     tournament?.id,
   );
-
   const [open, setOpen] = useState(false);
-
   const closeSidebar = useCallback(() => setOpen(false), []);
 
   const sections: SidebarSection[] = tournament
@@ -37,60 +31,29 @@ export function AppLayout() {
         {
           title: "Torneo",
           items: [
-            {
-              to: "/tournament",
-              label: "Tu torneo",
-              icon: Settings,
-            },
-            {
-              to: "/tournament/branding",
-              label: "Branding",
-              icon: ImageIcon,
-            },
+            { to: "/tournament", label: "Tu torneo", icon: Settings },
+            { to: "/tournament/branding", label: "Branding", icon: ImageIcon },
             {
               to: "/categories",
               label: "Categorías",
               icon: Layers,
               children: loadingCategories
                 ? []
-                : categories.map((category) => ({
-                    to: `/categories/${category.id}`,
-                    label: category.title,
+                : categories.map((c) => ({
+                    to: `/categories/${c.id}`,
+                    label: c.title,
                   })),
             },
-            {
-              to: "/teams",
-              label: "Equipos",
-              icon: Users,
-            },
-            {
-              to: "/players",
-              label: "Jugadores",
-              icon: UserRound,
-            },
-            {
-              to: "/calendar",
-              label: "Calendarios",
-              icon: CalendarDays,
-            },
-            {
-              to: "/phases",
-              label: "Fases",
-              icon: GitBranch,
-            },
+            { to: "/teams", label: "Equipos", icon: Users },
+            { to: "/players", label: "Jugadores", icon: UserRound },
+            { to: "/calendar", label: "Calendarios", icon: CalendarDays },
           ],
         },
       ]
     : [
         {
           title: "Torneo",
-          items: [
-            {
-              to: "/tournament",
-              label: "Crear torneo",
-              icon: Plus,
-            },
-          ],
+          items: [{ to: "/tournament", label: "Crear torneo", icon: Plus }],
           hint: "Crea tu torneo para desbloquear branding, categorías y calendario.",
         },
       ];

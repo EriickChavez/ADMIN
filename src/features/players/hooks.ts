@@ -52,9 +52,17 @@ export function usePlayers(tournamentId?: string, query: PlayersQuery = {}) {
 }
 
 export function usePlayer(tournamentId: string | undefined, playerId?: string) {
-    const { players, isLoading } = usePlayers(tournamentId, { limit: 200 });
-    const player = players.find((p) => p.id === playerId) ?? null;
-    return { player, isLoading };
+    const result = useQuery({
+        queryKey: ["players", tournamentId, "detail", playerId],
+        queryFn: () => playersService.findById(tournamentId!, playerId!),
+        enabled: Boolean(tournamentId && playerId),
+    });
+
+    return {
+        player: result.data ?? null,
+        isLoading: result.isLoading,
+        isError: result.isError,
+    };
 }
 
 export function useCreatePlayer(tournamentId: string) {

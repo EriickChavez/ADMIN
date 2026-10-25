@@ -1,5 +1,3 @@
-// src/features/matches/types.ts
-
 export type MatchStatus =
     | "scheduled"
     | "in_progress"
@@ -35,6 +33,7 @@ export interface Match {
     awayScore?: number | null;
     homePenalties?: number | null;
     awayPenalties?: number | null;
+    /** Solo vienen en el listado y el detalle (respuesta enriquecida). */
     homeTeam?: MatchTeamSummary;
     awayTeam?: MatchTeamSummary;
     category?: MatchCategorySummary;

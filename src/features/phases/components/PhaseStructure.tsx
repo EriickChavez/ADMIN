@@ -2,7 +2,7 @@ import { Users } from "lucide-react";
 import { ButtonLink } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { EmptyState } from "../../../shared/components/ui/EmptyState";
-import { useTeams } from "../../teams";
+import { useAllTeams } from "../../teams";
 import { usePhaseGroups, usePhaseTeams } from "../hooks";
 import type { Phase } from "../types";
 import { PhaseGroupsPanel } from "./PhaseGroupsPanel";
@@ -13,13 +13,13 @@ export function PhaseStructure({ phase }: { phase: Phase }) {
 
   const groupsQuery = usePhaseGroups(isGroupPhase ? phase.id : undefined);
   const phaseTeamsQuery = usePhaseTeams(phase.id);
-  const teamsQuery = useTeams(phase.tournamentId, {
+  const teamsQuery = useAllTeams(phase.tournamentId, {
     categoryId: phase.categoryId,
-    limit: 100,
   });
 
   const loading =
     groupsQuery.isLoading || phaseTeamsQuery.isLoading || teamsQuery.isLoading;
+
   const failed =
     groupsQuery.isError || phaseTeamsQuery.isError || teamsQuery.isError;
 
@@ -54,8 +54,6 @@ export function PhaseStructure({ phase }: { phase: Phase }) {
     );
   }
 
-  const truncated = (teamsQuery.pagination?.totalPages ?? 1) > 1;
-
   const teamsPanel = (
     <PhaseTeamsPanel
       phase={phase}
@@ -67,12 +65,6 @@ export function PhaseStructure({ phase }: { phase: Phase }) {
 
   return (
     <div className="space-y-6">
-      {truncated && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          Se muestran los primeros 100 equipos de la categoría.
-        </p>
-      )}
-
       {isGroupPhase ? (
         <div className="grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
           <PhaseGroupsPanel phaseId={phase.id} groups={groupsQuery.groups} />

@@ -20,7 +20,7 @@ export function PlayerDetailPage() {
   const { teams, isLoading: loadingTeams } = useTeams(tournament?.id, {
     limit: 100,
   });
-  const { player, isLoading } = usePlayer(tournament?.id, id);
+  const { player, isLoading, isError: isPlayerError } = usePlayer(tournament?.id, id);
   const updatePlayer = useUpdatePlayer(tournament?.id ?? "");
   const deletePlayer = useDeletePlayer(tournament?.id ?? "");
   const [saved, setSaved] = useState(false);
@@ -40,6 +40,18 @@ export function PlayerDetailPage() {
   }
 
   if (!tournament) return <Navigate to="/tournament" replace />;
+
+  if (isPlayerError) {
+    return (
+      <div>
+        <PageHeader title="No se pudo cargar el jugador" description="Ocurrió un error al consultar sus datos." />
+        <Card className="p-6">
+          <p role="alert" className="text-sm text-rose-700">Revisa tu conexión e inténtalo de nuevo.</p>
+          <Link to="/players" className="mt-4 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700">Volver a jugadores →</Link>
+        </Card>
+      </div>
+    );
+  }
 
   if (!player) {
     return (

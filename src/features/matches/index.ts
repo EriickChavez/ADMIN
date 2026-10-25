@@ -1,4 +1,5 @@
 export {
+    useAllMatches,
     useCreateMatches,
     useMatches,
     useUpdateMatch,

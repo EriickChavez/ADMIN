@@ -43,11 +43,9 @@ export default function App() {
           <Route path="/tournament" element={<TournamentPage />} />
           <Route path="/calendar" element={<CalendarsPage />} />
           <Route path="/tournament/branding" element={<BrandingPage />} />
-
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/categories/new" element={<CategoryNewPage />} />
           <Route path="/categories/:id" element={<CategoryDetailPage />} />
-
           <Route path="/phases" element={<PhasesPage />} />
           <Route path="/phases/new" element={<PhaseNewPage />} />
           <Route path="/phases/:id" element={<PhaseDetailPage />} />
@@ -57,11 +55,9 @@ export default function App() {
           />
           <Route path="/phases/:id/fixtures" element={<PhaseFixturesPage />} />
           <Route path="/phases/:id/edit" element={<PhaseEditPage />} />
-
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/teams/new" element={<TeamNewPage />} />
           <Route path="/teams/:id" element={<TeamDetailPage />} />
-
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/new" element={<PlayerNewPage />} />
           <Route path="/players/:id" element={<PlayerDetailPage />} />

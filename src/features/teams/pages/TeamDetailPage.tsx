@@ -16,7 +16,7 @@ export function TeamDetailPage() {
   const { categories, isLoading: loadingCategories } = useCategories(
     tournament?.id,
   );
-  const { team, isLoading } = useTeam(tournament?.id, id);
+  const { team, isLoading, isError: isTeamError } = useTeam(tournament?.id, id);
   const updateTeam = useUpdateTeam(tournament?.id ?? "");
   const deleteTeam = useDeleteTeam(tournament?.id ?? "");
   const [saved, setSaved] = useState(false);
@@ -33,6 +33,18 @@ export function TeamDetailPage() {
   }
 
   if (!tournament) return <Navigate to="/tournament" replace />;
+
+  if (isTeamError) {
+    return (
+      <div>
+        <PageHeader title="No se pudo cargar el equipo" description="Ocurrió un error al consultar sus datos." />
+        <Card className="p-6">
+          <p role="alert" className="text-sm text-rose-700">Revisa tu conexión e inténtalo de nuevo.</p>
+          <Link to="/teams" className="mt-4 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700">Volver a equipos →</Link>
+        </Card>
+      </div>
+    );
+  }
 
   if (!team) {
     return (

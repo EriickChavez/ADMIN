@@ -1,10 +1,8 @@
-// src/features/matches/mocks.ts
-
 import { http, HttpResponse } from "msw";
 import { API_URL } from "../../api/client";
 import { getSessionUserId } from "../../mocks/session";
 import { errorResponse } from "../../mocks/utils";
-import type { Match, MatchInput, MatchStatus } from "./types";
+import type { Match, MatchInput } from "./types";
 
 const STORAGE_KEY = "mock_matches";
 
@@ -13,73 +11,43 @@ const getAll = (): Match[] => {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) return JSON.parse(raw) as Match[];
     } catch {
-        // Si el almacenamiento está dañado, se inicia con una lista vacía.
+        // corrupted
     }
-
     return [];
 };
 
-const saveAll = (matches: Match[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(matches));
-};
+const saveAll = (list: Match[]) =>
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 
 export const matchesHandlers = [
     http.get(
         `${API_URL}/tournaments/:tournamentId/matches`,
         ({ params, request }) => {
             if (!getSessionUserId()) {
-                return errorResponse(
-                    401,
-                    "UNAUTHORIZED",
-                    "No hay sesión activa",
-                );
+                return errorResponse(401, "UNAUTHORIZED", "No hay sesión activa");
             }
 
             const url = new URL(request.url);
-            const page = Math.max(
-                1,
-                Number(url.searchParams.get("page") ?? 1),
-            );
+            const page = Math.max(1, Number(url.searchParams.get("page") ?? 1));
             const limit = Math.min(
                 100,
                 Math.max(1, Number(url.searchParams.get("limit") ?? 20)),
             );
-
             const categoryId = url.searchParams.get("categoryId");
             const status = url.searchParams.get("status");
             const phaseId = url.searchParams.get("phaseId");
 
-            let matches = getAll().filter(
-                (match) => match.tournamentId === params.tournamentId,
-            );
+            let list = getAll().filter((m) => m.tournamentId === params.tournamentId);
+            if (categoryId) list = list.filter((m) => m.categoryId === categoryId);
+            if (status) list = list.filter((m) => m.status === status);
+            if (phaseId) list = list.filter((m) => m.phaseId === phaseId);
+            list.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
 
-            if (categoryId) {
-                matches = matches.filter(
-                    (match) => match.categoryId === categoryId,
-                );
-            }
-
-            if (status) {
-                matches = matches.filter(
-                    (match) => match.status === status,
-                );
-            }
-
-            if (phaseId) {
-                matches = matches.filter(
-                    (match) => match.phaseId === phaseId,
-                );
-            }
-
-            matches.sort((a, b) =>
-                a.scheduledAt.localeCompare(b.scheduledAt),
-            );
-
-            const total = matches.length;
+            const total = list.length;
             const start = (page - 1) * limit;
 
             return HttpResponse.json({
-                matches: matches.slice(start, start + limit),
+                matches: list.slice(start, start + limit),
                 pagination: {
                     page,
                     limit,
@@ -94,27 +62,14 @@ export const matchesHandlers = [
         `${API_URL}/tournaments/:tournamentId/matches`,
         async ({ params, request }) => {
             if (!getSessionUserId()) {
-                return errorResponse(
-                    401,
-                    "UNAUTHORIZED",
-                    "No hay sesión activa",
-                );
+                return errorResponse(401, "UNAUTHORIZED", "No hay sesión activa");
             }
 
             const body = (await request.json()) as MatchInput;
 
-            if (
-                !body.categoryId ||
-                !body.homeTeamId ||
-                !body.awayTeamId
-            ) {
-                return errorResponse(
-                    400,
-                    "VALIDATION_ERROR",
-                    "Faltan datos del partido",
-                );
+            if (!body.categoryId || !body.homeTeamId || !body.awayTeamId) {
+                return errorResponse(400, "VALIDATION_ERROR", "Faltan datos del partido");
             }
-
             if (body.homeTeamId === body.awayTeamId) {
                 return errorResponse(
                     400,
@@ -122,11 +77,7 @@ export const matchesHandlers = [
                     "El equipo local y visitante deben ser diferentes",
                 );
             }
-
-            if (
-                !body.scheduledAt ||
-                Number.isNaN(Date.parse(body.scheduledAt))
-            ) {
+            if (!body.scheduledAt || Number.isNaN(Date.parse(body.scheduledAt))) {
                 return errorResponse(
                     400,
                     "VALIDATION_ERROR",
@@ -153,7 +104,6 @@ export const matchesHandlers = [
             };
 
             saveAll([...getAll(), match]);
-
             return HttpResponse.json({ match }, { status: 201 });
         },
     ),
@@ -162,82 +112,32 @@ export const matchesHandlers = [
         `${API_URL}/matches/:matchId`,
         async ({ params, request }) => {
             if (!getSessionUserId()) {
-                return errorResponse(
-                    401,
-                    "UNAUTHORIZED",
-                    "No hay sesión activa",
-                );
+                return errorResponse(401, "UNAUTHORIZED", "No hay sesión activa");
             }
 
-            const body = (await request.json()) as {
-                scheduledAt?: string;
-                venue?: string | null;
-                status?: MatchStatus;
-            };
-
+            const body = (await request.json()) as Partial<Match>;
             const matches = getAll();
-            const index = matches.findIndex(
-                (match) => match.id === params.matchId,
-            );
-
-            if (index < 0) {
-                return errorResponse(
-                    404,
-                    "NOT_FOUND",
-                    "Partido no encontrado",
-                );
-            }
+            const index = matches.findIndex((match) => match.id === params.matchId);
+            if (index < 0) return errorResponse(404, "NOT_FOUND", "Partido no encontrado");
 
             const current = matches[index];
-
-            if (
-                body.scheduledAt &&
-                Number.isNaN(Date.parse(body.scheduledAt))
-            ) {
-                return errorResponse(
-                    400,
-                    "VALIDATION_ERROR",
-                    "La fecha del partido no es válida",
-                );
+            if (body.scheduledAt && Number.isNaN(Date.parse(body.scheduledAt))) {
+                return errorResponse(400, "VALIDATION_ERROR", "La fecha del partido no es válida");
             }
-
-            const allowedStatuses: MatchStatus[] = [
-                "scheduled",
-                "cancelled",
-                "postponed",
-            ];
-
-            if (
-                body.status &&
-                body.status !== current.status &&
-                !allowedStatuses.includes(body.status)
-            ) {
-                return errorResponse(
-                    400,
-                    "VALIDATION_ERROR",
-                    "El estado no se puede cambiar desde el calendario",
-                );
+            if (body.status && body.status !== matches[index].status && !["scheduled", "cancelled", "postponed"].includes(body.status)) {
+                return errorResponse(400, "VALIDATION_ERROR", "El estado no se puede cambiar desde el calendario");
             }
 
             const updated: Match = {
                 ...current,
-                ...(body.scheduledAt
-                    ? {
-                        scheduledAt: new Date(
-                            body.scheduledAt,
-                        ).toISOString(),
-                    }
-                    : {}),
-                ...(body.venue !== undefined
-                    ? { venue: body.venue?.trim() || null }
-                    : {}),
+                ...(body.scheduledAt ? { scheduledAt: new Date(body.scheduledAt).toISOString() } : {}),
+                ...(body.venue !== undefined ? { venue: body.venue?.trim() || null } : {}),
                 ...(body.status ? { status: body.status } : {}),
             };
-
             matches[index] = updated;
             saveAll(matches);
-
             return HttpResponse.json({ match: updated });
         },
     ),
+
 ];

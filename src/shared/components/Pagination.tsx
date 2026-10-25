@@ -17,9 +17,7 @@ export function Pagination({
   onPageChange,
   disabled = false,
 }: PaginationProps) {
-  if (totalPages <= 1) {
-    return null;
-  }
+  if (totalPages <= 1) return null;
 
   const currentPage = Math.min(Math.max(page, 1), totalPages);
   const startItem = total === 0 ? 0 : (currentPage - 1) * limit + 1;
@@ -49,7 +47,6 @@ export function Pagination({
           >
             <ChevronLeft size={16} />
           </button>
-
           <button
             type="button"
             aria-label="Página siguiente"

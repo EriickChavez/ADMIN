@@ -3,9 +3,12 @@ import { API_URL } from "../../api/client";
 import { getSessionUserId } from "../../mocks/session";
 import { errorResponse } from "../../mocks/utils";
 import type { PhaseGroup, PhaseTeam, SyncPhaseTeamItem } from "./types";
+import type { Match } from "../matches/types";
 
 const GROUPS_KEY = "mock_phase_groups";
 const TEAMS_KEY = "mock_phase_teams";
+const MATCHES_KEY = "mock_matches";
+
 const now = () => new Date().toISOString();
 
 function read<T>(key: string): T[] {
@@ -62,24 +65,53 @@ export const phaseStructureHandlers = [
 
     http.delete(`${API_URL}/phase-groups/:id`, ({ params }) => {
         if (!getSessionUserId()) {
-            return errorResponse(401, "UNAUTHORIZED", "No hay sesión activa");
+            return errorResponse(
+                401,
+                "UNAUTHORIZED",
+                "No hay sesión activa",
+            );
         }
+
         const groups = read<PhaseGroup>(GROUPS_KEY);
-        if (!groups.some((g) => g.id === params.id)) {
-            return errorResponse(404, "PHASE_GROUP_NOT_FOUND", "Grupo no encontrado");
+
+        if (!groups.some((group) => group.id === params.id)) {
+            return errorResponse(
+                404,
+                "PHASE_GROUP_NOT_FOUND",
+                "Grupo no encontrado",
+            );
         }
+
+        const groupHasMatches = read<Match>(MATCHES_KEY).some(
+            (match) => match.phaseGroupId === params.id,
+        );
+
+        if (groupHasMatches) {
+            return errorResponse(
+                409,
+                "PHASE_STRUCTURE_LOCKED",
+                "Esta fase ya tiene partidos: elimina primero los partidos del grupo.",
+            );
+        }
+
         write(
             GROUPS_KEY,
-            groups.filter((g) => g.id !== params.id),
+            groups.filter((group) => group.id !== params.id),
         );
-        // Los equipos de ese grupo quedan sin grupo.
+
+        // Los equipos del grupo eliminado quedan sin grupo.
         write(
             TEAMS_KEY,
-            read<PhaseTeam>(TEAMS_KEY).map((t) =>
-                t.phaseGroupId === params.id ? { ...t, phaseGroupId: null } : t,
+            read<PhaseTeam>(TEAMS_KEY).map((team) =>
+                team.phaseGroupId === params.id
+                    ? { ...team, phaseGroupId: null }
+                    : team,
             ),
         );
-        return HttpResponse.json({ message: "Group deleted successfully" });
+
+        return HttpResponse.json({
+            message: "Group deleted successfully",
+        });
     }),
 
     http.get(`${API_URL}/phases/:phaseId/teams`, ({ params }) => {

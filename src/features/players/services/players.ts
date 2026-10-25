@@ -67,6 +67,27 @@ export const playersService = {
         return data;
     },
 
+    /** Busca por ID recorriendo páginas válidas de la API (máximo 100). */
+    findById: async (tournamentId: string, playerId: string): Promise<Player | null> => {
+        const firstPage = await playersService.listByTournament(tournamentId, {
+            page: 1,
+            limit: 100,
+        });
+        const firstMatch = firstPage.players.find((player) => player.id === playerId);
+        if (firstMatch) return firstMatch;
+
+        for (let page = 2; page <= firstPage.pagination.totalPages; page += 1) {
+            const response = await playersService.listByTournament(tournamentId, {
+                page,
+                limit: 100,
+            });
+            const match = response.players.find((player) => player.id === playerId);
+            if (match) return match;
+        }
+
+        return null;
+    },
+
     create: async (tournamentId: string, input: PlayerInput): Promise<Player> => {
         const { data } = await api.post<PlayerResponse>(
             `/tournaments/${tournamentId}/players`,

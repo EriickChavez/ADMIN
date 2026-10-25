@@ -15,7 +15,7 @@ import { ButtonLink } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { PageHeader } from "../../../shared/components/ui/PageHeader";
 import { useMatches } from "../../matches";
-import { useTeams } from "../../teams";
+import { useAllTeams } from "../../teams";
 import { useMyTournament } from "../../tournaments";
 import { usePhase, usePhaseGroups, usePhaseTeams } from "../hooks";
 import {
@@ -83,9 +83,8 @@ export function PhaseDetailPage() {
     phase?.type === "group" ? phase.id : undefined,
   );
   const phaseTeamsQuery = usePhaseTeams(phase?.id);
-  const teamsQuery = useTeams(phase?.tournamentId, {
+  const teamsQuery = useAllTeams(phase?.tournamentId, {
     categoryId: phase?.categoryId,
-    limit: 100,
   });
   const matchesQuery = useMatches(phase?.tournamentId, {
     phaseId: phase?.id,
@@ -129,7 +128,7 @@ export function PhaseDetailPage() {
       ? !!assignment.phaseGroupId && validGroupIds.has(assignment.phaseGroupId)
       : true,
   ).length;
-  const totalTeams = teamsQuery.pagination?.total ?? teamsQuery.teams.length;
+  const totalTeams = teamsQuery.teams.length;
   const matches = matchesQuery.matches;
   const matchesTotal = matchesQuery.pagination?.total ?? matches.length;
   const finishedMatches = matches.filter(
