@@ -1,10 +1,16 @@
 import { NavLink } from "react-router-dom";
-import { CalendarDays, Pencil, Settings2, Trophy } from "lucide-react";
+import {
+  CalendarDays,
+  ClipboardList,
+  Pencil,
+  Settings2,
+  Trophy,
+} from "lucide-react";
 import type { Phase } from "../types";
 
 interface PhaseWorkspaceNavProps {
   phase: Phase;
-  current: "overview" | "structure" | "fixtures" | "edit";
+  current: "overview" | "structure" | "fixtures" | "results" | "edit";
 }
 
 const base =
@@ -34,6 +40,13 @@ export function PhaseWorkspaceNav({ phase, current }: PhaseWorkspaceNavProps) {
       to: `/phases/${phase.id}/fixtures`,
       icon: CalendarDays,
       show: phase.type === "group",
+    },
+    {
+      id: "results",
+      label: "Resultados",
+      to: `/phases/${phase.id}/results`,
+      icon: ClipboardList,
+      show: phase.type !== "knockout",
     },
     {
       id: "edit",

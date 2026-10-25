@@ -11,12 +11,14 @@ import {
   CategoryNewPage,
 } from "./features/categories";
 import { HomePage } from "./features/home";
+import { MatchSheetPage } from "./features/match-events";
 import { CalendarsPage } from "./features/matches";
 import {
   PhaseDetailPage,
   PhaseEditPage,
   PhaseFixturesPage,
   PhaseNewPage,
+  PhaseResultsPage,
   PhasesPage,
   PhaseStructurePage,
 } from "./features/phases";
@@ -42,6 +44,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/tournament" element={<TournamentPage />} />
           <Route path="/calendar" element={<CalendarsPage />} />
+          <Route path="/matches/:id" element={<MatchSheetPage />} />
           <Route path="/tournament/branding" element={<BrandingPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/categories/new" element={<CategoryNewPage />} />
@@ -54,6 +57,7 @@ export default function App() {
             element={<PhaseStructurePage />}
           />
           <Route path="/phases/:id/fixtures" element={<PhaseFixturesPage />} />
+          <Route path="/phases/:id/results" element={<PhaseResultsPage />} />
           <Route path="/phases/:id/edit" element={<PhaseEditPage />} />
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/teams/new" element={<TeamNewPage />} />

@@ -55,10 +55,15 @@ export interface MatchResponse {
     match: Match;
 }
 
+// El marcador no se envía: el backend lo deriva de los eventos de gol.
+// in_progress y finished solo se alcanzan con start, finish y reopen.
 export interface MatchUpdateInput {
     scheduledAt?: string;
     venue?: string | null;
     status?: MatchStatus;
+    /** Solo con marcador empatado; van juntos (o ambos null para borrarlos). */
+    homePenalties?: number | null;
+    awayPenalties?: number | null;
 }
 
 export interface MatchInput {

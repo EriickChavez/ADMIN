@@ -1,7 +1,11 @@
 export {
     useAllMatches,
     useCreateMatches,
+    useFinishMatch,
+    useMatch,
     useMatches,
+    useReopenMatch,
+    useStartMatch,
     useUpdateMatch,
 } from "./hooks";
 
@@ -11,6 +15,8 @@ export {
 } from "./utils/datetime";
 
 export { getMatchErrorMessage } from "./utils/errors";
+
+export { MATCH_STATUS_LABELS } from "./types";
 
 export type {
     Match,

@@ -7,6 +7,7 @@ import { brandingHandlers } from "../features/tournaments/mocks/branding";
 import { tournamentsHandlers } from "../features/tournaments/mocks";
 import { phaseStructureHandlers } from "../features/phases/mocks-structure";
 import { matchesHandlers } from "../features/matches/mocks";
+import { matchEventsHandlers } from "../features/match-events/mocks";
 
 export const handlers = [
     ...authHandlers,
@@ -18,4 +19,5 @@ export const handlers = [
     ...phasesHandlers,
     ...phaseStructureHandlers,
     ...matchesHandlers,
+    ...matchEventsHandlers,
 ];

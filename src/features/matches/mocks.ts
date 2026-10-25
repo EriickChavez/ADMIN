@@ -1,23 +1,13 @@
 import { http, HttpResponse } from "msw";
 import { API_URL } from "../../api/client";
+import { DB_KEYS, readList, writeList } from "../../mocks/db";
 import { getSessionUserId } from "../../mocks/session";
 import { errorResponse } from "../../mocks/utils";
-import type { Match, MatchInput } from "./types";
+import type { Match, MatchInput, MatchUpdateInput } from "./types";
 
-const STORAGE_KEY = "mock_matches";
+const getAll = (): Match[] => readList<Match>(DB_KEYS.matches);
 
-const getAll = (): Match[] => {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw) as Match[];
-    } catch {
-        // corrupted
-    }
-    return [];
-};
-
-const saveAll = (list: Match[]) =>
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+const saveAll = (list: Match[]) => writeList(DB_KEYS.matches, list);
 
 export const matchesHandlers = [
     http.get(
@@ -57,6 +47,18 @@ export const matchesHandlers = [
             });
         },
     ),
+
+    http.get(`${API_URL}/matches/:matchId`, ({ params }) => {
+        if (!getSessionUserId()) {
+            return errorResponse(401, "UNAUTHORIZED", "No hay sesión activa");
+        }
+
+        const match = getAll().find((m) => m.id === params.matchId);
+        if (!match) {
+            return errorResponse(404, "MATCH_NOT_FOUND", "Partido no encontrado");
+        }
+        return HttpResponse.json({ match });
+    }),
 
     http.post(
         `${API_URL}/tournaments/:tournamentId/matches`,
@@ -115,17 +117,69 @@ export const matchesHandlers = [
                 return errorResponse(401, "UNAUTHORIZED", "No hay sesión activa");
             }
 
-            const body = (await request.json()) as Partial<Match>;
+            const body = (await request.json()) as MatchUpdateInput;
             const matches = getAll();
             const index = matches.findIndex((match) => match.id === params.matchId);
-            if (index < 0) return errorResponse(404, "NOT_FOUND", "Partido no encontrado");
+            if (index < 0) {
+                return errorResponse(404, "MATCH_NOT_FOUND", "Partido no encontrado");
+            }
 
             const current = matches[index];
             if (body.scheduledAt && Number.isNaN(Date.parse(body.scheduledAt))) {
                 return errorResponse(400, "VALIDATION_ERROR", "La fecha del partido no es válida");
             }
-            if (body.status && body.status !== matches[index].status && !["scheduled", "cancelled", "postponed"].includes(body.status)) {
-                return errorResponse(400, "VALIDATION_ERROR", "El estado no se puede cambiar desde el calendario");
+
+            if (body.status && body.status !== current.status) {
+                if (body.status === "in_progress" || body.status === "finished") {
+                    return errorResponse(
+                        400,
+                        "USE_LIFECYCLE_ENDPOINTS",
+                        "Para iniciar, finalizar o reabrir un partido usa los botones de la cédula",
+                    );
+                }
+                if (!["scheduled", "cancelled", "postponed"].includes(body.status)) {
+                    return errorResponse(400, "VALIDATION_ERROR", "El estado del partido no es válido");
+                }
+            }
+
+            // Penales: ambos o ninguno, y solo con el marcador empatado.
+            let penalties: Partial<Match> = {};
+            if (body.homePenalties !== undefined || body.awayPenalties !== undefined) {
+                const home = body.homePenalties ?? null;
+                const away = body.awayPenalties ?? null;
+
+                if (home !== null || away !== null) {
+                    if (home === null || away === null) {
+                        return errorResponse(
+                            400,
+                            "VALIDATION_ERROR",
+                            "Registra los penales de ambos equipos",
+                        );
+                    }
+                    if (
+                        !Number.isInteger(home) ||
+                        !Number.isInteger(away) ||
+                        home < 0 ||
+                        away < 0
+                    ) {
+                        return errorResponse(
+                            400,
+                            "VALIDATION_ERROR",
+                            "Los penales deben ser números enteros",
+                        );
+                    }
+                    const tied =
+                        current.homeScore != null &&
+                        current.homeScore === current.awayScore;
+                    if (!tied) {
+                        return errorResponse(
+                            400,
+                            "VALIDATION_ERROR",
+                            "Los penales solo se pueden registrar con el marcador empatado",
+                        );
+                    }
+                }
+                penalties = { homePenalties: home, awayPenalties: away };
             }
 
             const updated: Match = {
@@ -133,6 +187,7 @@ export const matchesHandlers = [
                 ...(body.scheduledAt ? { scheduledAt: new Date(body.scheduledAt).toISOString() } : {}),
                 ...(body.venue !== undefined ? { venue: body.venue?.trim() || null } : {}),
                 ...(body.status ? { status: body.status } : {}),
+                ...penalties,
             };
             matches[index] = updated;
             saveAll(matches);

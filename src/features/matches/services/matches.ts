@@ -8,6 +8,19 @@ import type {
     MatchesResponse,
 } from "../types";
 
+type LifecycleAction = "start" | "finish" | "reopen";
+
+async function lifecycle(
+    matchId: string,
+    action: LifecycleAction,
+): Promise<Match> {
+    const { data } = await api.post<MatchResponse>(
+        `/matches/${matchId}/${action}`,
+        {},
+    );
+    return data.match;
+}
+
 export const matchesService = {
     listByTournament: async (
         tournamentId: string,
@@ -68,6 +81,11 @@ export const matchesService = {
         return [firstPage, ...remainingPages].flatMap((response) => response.matches);
     },
 
+    getById: async (matchId: string): Promise<Match> => {
+        const { data } = await api.get<MatchResponse>(`/matches/${matchId}`);
+        return data.match;
+    },
+
     update: async (matchId: string, input: MatchUpdateInput): Promise<Match> => {
         const { data } = await api.patch<MatchResponse>(`/matches/${matchId}`, input);
         return data.match;
@@ -80,4 +98,13 @@ export const matchesService = {
         );
         return data.match;
     },
+
+    /** Abre la cédula: scheduled o postponed → in_progress. */
+    start: (matchId: string) => lifecycle(matchId, "start"),
+
+    /** Cierra la cédula: in_progress → finished (fija el marcador desde los eventos). */
+    finish: (matchId: string) => lifecycle(matchId, "finish"),
+
+    /** Reabre la cédula: finished → in_progress. */
+    reopen: (matchId: string) => lifecycle(matchId, "reopen"),
 };

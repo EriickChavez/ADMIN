@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Check,
   CircleHelp,
+  ClipboardList,
   Clock3,
   GitBranch,
   Pencil,
@@ -154,10 +155,21 @@ export function PhaseDetailPage() {
       description:
         matchesTotal === 0
           ? "Crea los encuentros de todos contra todos por grupo."
-          : `${finishedMatches} de ${matchesTotal} partidos finalizados`,
+          : plural(matchesTotal, "partido generado", "partidos generados"),
       done: matchesTotal > 0,
       to: `/phases/${phase.id}/fixtures`,
       icon: CalendarDays,
+    });
+    steps.push({
+      id: "results",
+      title: "Captura los resultados",
+      description:
+        matchesTotal === 0
+          ? "Primero genera el calendario de la fase."
+          : `${finishedMatches} de ${matchesTotal} partidos finalizados`,
+      done: matchesTotal > 0 && finishedMatches === matchesTotal,
+      to: `/phases/${phase.id}/results`,
+      icon: ClipboardList,
     });
   } else if (phase.type === "league") {
     steps.push({

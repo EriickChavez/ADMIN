@@ -23,6 +23,10 @@ export function getMatchErrorMessage(error: unknown): string {
             return "El estado del partido no es válido";
         case "INVALID_MATCH_TRANSITION":
             return "Ese cambio de estado no es posible desde el estado actual del partido";
+        case "MATCH_NOT_IN_PROGRESS":
+            return "La cédula no está abierta: inicia el partido (o reábrelo) para registrar o borrar eventos";
+        case "USE_LIFECYCLE_ENDPOINTS":
+            return "Para iniciar, finalizar o reabrir un partido usa los botones de la cédula";
         case "MATCH_HAS_EVENTS":
             return "No se pueden cambiar los equipos ni la categoría de un partido que ya tiene eventos";
         case "CATEGORY_CLOSED":

@@ -58,6 +58,20 @@ export function useAllMatches(
     };
 }
 
+export function useMatch(matchId?: string) {
+    const result = useQuery({
+        queryKey: ["match", matchId],
+        queryFn: () => matchesService.getById(matchId!),
+        enabled: !!matchId,
+    });
+
+    return {
+        match: result.data ?? null,
+        isLoading: result.isLoading,
+        isError: result.isError,
+    };
+}
+
 interface CreateMatchesItem {
     /** Identifica la fila para asociarle su error. */
     key: string;
@@ -105,9 +119,33 @@ export function useUpdateMatch(tournamentId: string) {
     return useMutation({
         mutationFn: ({ id, input }: { id: string; input: MatchUpdateInput }) =>
             matchesService.update(id, input),
-        onSuccess: () => {
+        onSuccess: (_match, { id }) => {
             qc.invalidateQueries({ queryKey: ["matches", tournamentId] });
+            qc.invalidateQueries({ queryKey: ["match", id] });
             qc.invalidateQueries({ queryKey: ["phase"] });
         },
     });
 }
+
+type LifecycleAction = "start" | "finish" | "reopen";
+
+function useMatchLifecycle(tournamentId: string, action: LifecycleAction) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (matchId: string) => matchesService[action](matchId),
+        onSuccess: (_match, matchId) => {
+            // Esta clave también cubre posiciones y llaves: cuelgan de ella a propósito.
+            qc.invalidateQueries({ queryKey: ["matches", tournamentId] });
+            qc.invalidateQueries({ queryKey: ["match", matchId] });
+        },
+    });
+}
+
+export const useStartMatch = (tournamentId: string) =>
+    useMatchLifecycle(tournamentId, "start");
+
+export const useFinishMatch = (tournamentId: string) =>
+    useMatchLifecycle(tournamentId, "finish");
+
+export const useReopenMatch = (tournamentId: string) =>
+    useMatchLifecycle(tournamentId, "reopen");
