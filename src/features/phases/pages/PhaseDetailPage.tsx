@@ -3,7 +3,8 @@ import { ArrowLeft, Check, GitBranch, Pencil } from "lucide-react";
 import { ButtonLink } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { PageHeader } from "../../../shared/components/ui/PageHeader";
-import { useTeams } from "../../teams/hooks";
+import { useMatches } from "../../matches";
+import { useTeams } from "../../teams";
 import { useMyTournament } from "../../tournaments";
 import { usePhase, usePhaseGroups, usePhaseTeams } from "../hooks";
 import {
@@ -47,6 +48,10 @@ export function PhaseDetailPage() {
     categoryId: phase?.categoryId,
     limit: 100,
   });
+  const matchesQuery = useMatches(phase?.tournamentId, {
+    phaseId: phase?.id,
+    limit: 1,
+  });
 
   if (loadingTournament || isLoading) {
     return (
@@ -86,6 +91,7 @@ export function PhaseDetailPage() {
     isGroup ? !!a.phaseGroupId && validGroupIds.has(a.phaseGroupId) : true,
   ).length;
   const totalTeams = teamsQuery.pagination?.total ?? teamsQuery.teams.length;
+  const matchesTotal = matchesQuery.pagination?.total ?? 0;
 
   // Cada etapa nueva agrega aquí su paso, en el orden en que se hace.
   const steps: Step[] = [];
@@ -99,6 +105,16 @@ export function PhaseDetailPage() {
           : `${plural(groups.length, "grupo", "grupos")} · ${assigned} de ${totalTeams} equipos asignados`,
       done: groups.length > 0 && assigned >= 2,
       to: `/phases/${phase.id}/structure`,
+    });
+    steps.push({
+      id: "fixtures",
+      title: "Calendario",
+      description:
+        matchesTotal === 0
+          ? "Genera los partidos de todos contra todos."
+          : plural(matchesTotal, "partido creado", "partidos creados"),
+      done: matchesTotal > 0,
+      to: `/phases/${phase.id}/fixtures`,
     });
   } else if (phase.type === "league") {
     steps.push({

@@ -2,7 +2,7 @@ import { Users } from "lucide-react";
 import { ButtonLink } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { EmptyState } from "../../../shared/components/ui/EmptyState";
-import { useTeams } from "../../teams/hooks";
+import { useTeams } from "../../teams";
 import { usePhaseGroups, usePhaseTeams } from "../hooks";
 import type { Phase } from "../types";
 import { PhaseGroupsPanel } from "./PhaseGroupsPanel";

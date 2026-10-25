@@ -14,6 +14,7 @@ import { HomePage } from "./features/home";
 import {
   PhaseDetailPage,
   PhaseEditPage,
+  PhaseFixturesPage,
   PhaseNewPage,
   PhasesPage,
   PhaseStructurePage,
@@ -50,6 +51,7 @@ export default function App() {
             path="/phases/:id/structure"
             element={<PhaseStructurePage />}
           />
+          <Route path="/phases/:id/fixtures" element={<PhaseFixturesPage />} />
           <Route path="/phases/:id/edit" element={<PhaseEditPage />} />
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/teams/new" element={<TeamNewPage />} />

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Save, Search } from "lucide-react";
 import { Button } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
-import type { Team } from "../../teams/types";
+import type { Team } from "../../teams";
 import { useSyncPhaseTeams } from "../hooks";
 import type { Phase, PhaseGroup, PhaseTeam } from "../types";
 import { getPhaseErrorMessage } from "../utils/errors";
