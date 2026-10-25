@@ -1,11 +1,5 @@
 import { NavLink } from "react-router-dom";
-import {
-  CalendarDays,
-  GitBranch,
-  Pencil,
-  Settings2,
-  Trophy,
-} from "lucide-react";
+import { CalendarDays, Pencil, Settings2, Trophy } from "lucide-react";
 import type { Phase } from "../types";
 
 interface PhaseWorkspaceNavProps {

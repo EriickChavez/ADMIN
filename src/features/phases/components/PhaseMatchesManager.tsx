@@ -125,13 +125,11 @@ export function PhaseMatchesManager({ phase }: { phase: Phase }) {
 
     try {
       await updateMatch.mutateAsync({
-        matchId: match.id,
+        id: match.id,
         input: {
           scheduledAt: scheduledDate.toISOString(),
           venue: draft.venue.trim() || null,
           status: draft.status,
-          homeScore,
-          awayScore,
         },
       });
 
@@ -194,8 +192,7 @@ export function PhaseMatchesManager({ phase }: { phase: Phase }) {
             const draft = getDraft(match);
 
             const isSaving =
-              updateMatch.isPending &&
-              updateMatch.variables?.matchId === match.id;
+              updateMatch.isPending && updateMatch.variables?.id === match.id;
 
             return (
               <Card key={match.id} className="p-4 sm:p-5">
