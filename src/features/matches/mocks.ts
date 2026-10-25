@@ -1,9 +1,10 @@
+// src/features/matches/mocks.ts
 
 import { http, HttpResponse } from "msw";
 import { API_URL } from "../../api/client";
 import { getSessionUserId } from "../../mocks/session";
 import { errorResponse } from "../../mocks/utils";
-import type { Match, MatchInput } from "./types";
+import type { Match, MatchInput, MatchStatus } from "./types";
 
 const STORAGE_KEY = "mock_matches";
 
@@ -12,14 +13,14 @@ const getAll = (): Match[] => {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) return JSON.parse(raw) as Match[];
     } catch {
-        // El almacenamiento está vacío o contiene datos inválidos.
+        // Si el almacenamiento está dañado, se inicia con una lista vacía.
     }
 
     return [];
 };
 
-const saveAll = (list: Match[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+const saveAll = (matches: Match[]) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(matches));
 };
 
 export const matchesHandlers = [
@@ -41,45 +42,44 @@ export const matchesHandlers = [
             );
             const limit = Math.min(
                 100,
-                Math.max(
-                    1,
-                    Number(url.searchParams.get("limit") ?? 20),
-                ),
+                Math.max(1, Number(url.searchParams.get("limit") ?? 20)),
             );
 
             const categoryId = url.searchParams.get("categoryId");
             const status = url.searchParams.get("status");
             const phaseId = url.searchParams.get("phaseId");
 
-            let list = getAll().filter(
+            let matches = getAll().filter(
                 (match) => match.tournamentId === params.tournamentId,
             );
 
             if (categoryId) {
-                list = list.filter(
+                matches = matches.filter(
                     (match) => match.categoryId === categoryId,
                 );
             }
 
             if (status) {
-                list = list.filter((match) => match.status === status);
+                matches = matches.filter(
+                    (match) => match.status === status,
+                );
             }
 
             if (phaseId) {
-                list = list.filter(
+                matches = matches.filter(
                     (match) => match.phaseId === phaseId,
                 );
             }
 
-            list.sort((a, b) =>
+            matches.sort((a, b) =>
                 a.scheduledAt.localeCompare(b.scheduledAt),
             );
 
-            const total = list.length;
+            const total = matches.length;
             const start = (page - 1) * limit;
 
             return HttpResponse.json({
-                matches: list.slice(start, start + limit),
+                matches: matches.slice(start, start + limit),
                 pagination: {
                     page,
                     limit,
@@ -169,118 +169,73 @@ export const matchesHandlers = [
                 );
             }
 
-            const matchId = String(params.matchId);
-            const body = (await request.json()) as Partial<Match>;
-            const all = getAll();
+            const body = (await request.json()) as {
+                scheduledAt?: string;
+                venue?: string | null;
+                status?: MatchStatus;
+            };
 
-            const index = all.findIndex(
-                (match) => match.id === matchId,
+            const matches = getAll();
+            const index = matches.findIndex(
+                (match) => match.id === params.matchId,
             );
 
             if (index < 0) {
                 return errorResponse(
                     404,
-                    "MATCH_NOT_FOUND",
-                    "El partido no existe",
+                    "NOT_FOUND",
+                    "Partido no encontrado",
                 );
             }
 
-            const current = all[index];
-            const nextStatus = body.status ?? current.status;
+            const current = matches[index];
 
-            const validStatuses = [
+            if (
+                body.scheduledAt &&
+                Number.isNaN(Date.parse(body.scheduledAt))
+            ) {
+                return errorResponse(
+                    400,
+                    "VALIDATION_ERROR",
+                    "La fecha del partido no es válida",
+                );
+            }
+
+            const allowedStatuses: MatchStatus[] = [
                 "scheduled",
-                "in_progress",
-                "finished",
                 "cancelled",
                 "postponed",
             ];
 
-            if (!validStatuses.includes(nextStatus)) {
-                return errorResponse(
-                    400,
-                    "INVALID_MATCH_STATUS",
-                    "El estado del partido no es válido",
-                );
-            }
-
-            const nextHomeScore =
-                body.homeScore === undefined
-                    ? current.homeScore
-                    : body.homeScore;
-
-            const nextAwayScore =
-                body.awayScore === undefined
-                    ? current.awayScore
-                    : body.awayScore;
-
-            const scoreIsValid = (value: unknown) =>
-                value === null ||
-                (typeof value === "number" &&
-                    Number.isInteger(value) &&
-                    value >= 0);
-
             if (
-                !scoreIsValid(nextHomeScore) ||
-                !scoreIsValid(nextAwayScore)
+                body.status &&
+                body.status !== current.status &&
+                !allowedStatuses.includes(body.status)
             ) {
                 return errorResponse(
                     400,
                     "VALIDATION_ERROR",
-                    "Los marcadores deben ser números enteros no negativos",
+                    "El estado no se puede cambiar desde el calendario",
                 );
-            }
-
-            if (
-                (nextHomeScore == null) !==
-                (nextAwayScore == null)
-            ) {
-                return errorResponse(
-                    400,
-                    "VALIDATION_ERROR",
-                    "Captura ambos marcadores o deja ambos vacíos",
-                );
-            }
-
-            let scheduledAt = current.scheduledAt;
-
-            if (body.scheduledAt !== undefined) {
-                if (
-                    !body.scheduledAt ||
-                    Number.isNaN(Date.parse(body.scheduledAt))
-                ) {
-                    return errorResponse(
-                        400,
-                        "VALIDATION_ERROR",
-                        "La fecha del partido no es válida",
-                    );
-                }
-
-                scheduledAt = new Date(body.scheduledAt).toISOString();
             }
 
             const updated: Match = {
                 ...current,
-                scheduledAt,
-                venue:
-                    body.venue === undefined
-                        ? current.venue
-                        : body.venue?.trim() || null,
-                status: nextStatus,
-                homeScore: nextHomeScore,
-                awayScore: nextAwayScore,
-                homePenalties:
-                    body.homePenalties === undefined
-                        ? current.homePenalties
-                        : body.homePenalties,
-                awayPenalties:
-                    body.awayPenalties === undefined
-                        ? current.awayPenalties
-                        : body.awayPenalties,
+                ...(body.scheduledAt
+                    ? {
+                        scheduledAt: new Date(
+                            body.scheduledAt,
+                        ).toISOString(),
+                    }
+                    : {}),
+                ...(body.venue !== undefined
+                    ? { venue: body.venue?.trim() || null }
+                    : {}),
+                ...(body.status ? { status: body.status } : {}),
             };
 
-            all[index] = updated;
-            saveAll(all);
+            matches[index] = updated;
+            saveAll(matches);
 
             return HttpResponse.json({ match: updated });
         },

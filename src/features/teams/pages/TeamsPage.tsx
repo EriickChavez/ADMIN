@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Plus, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { PageHeader } from "../../../shared/components/ui/PageHeader";
-import { Button, ButtonLink } from "../../../shared/components/ui/Button";
+import { ButtonLink } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { EmptyState } from "../../../shared/components/ui/EmptyState";
+import { Pagination } from "../../../shared/components/Pagination";
 import { useCategories } from "../../categories";
 import { useMyTournament } from "../../tournaments";
 import { useTeams } from "../hooks";
@@ -13,9 +14,11 @@ const PAGE_SIZE = 20;
 
 export function TeamsPage() {
   const { tournament, isLoading: loadingTournament } = useMyTournament();
+
   const { categories, isLoading: loadingCategories } = useCategories(
     tournament?.id,
   );
+
   const [page, setPage] = useState(1);
   const [categoryId, setCategoryId] = useState("");
 
@@ -32,7 +35,11 @@ export function TeamsPage() {
 
   const categoryMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const c of categories) map.set(c.id, c.title);
+
+    for (const category of categories) {
+      map.set(category.id, category.title);
+    }
+
     return map;
   }, [categories]);
 
@@ -43,10 +50,11 @@ export function TeamsPage() {
           <div className="h-8 w-36 animate-pulse rounded-lg bg-slate-200/70" />
           <div className="h-4 w-64 max-w-full animate-pulse rounded-lg bg-slate-200/70" />
         </div>
+
         <div className="space-y-3">
-          {[0, 1, 2].map((i) => (
+          {[0, 1, 2].map((item) => (
             <div
-              key={i}
+              key={item}
               className="h-14 animate-pulse rounded-xl bg-slate-200/70"
             />
           ))}
@@ -62,11 +70,14 @@ export function TeamsPage() {
           title="Equipos"
           description="Administra los equipos de tu torneo."
         />
+
         <Card className="flex flex-col items-center px-6 py-12 text-center">
           <Users size={28} className="text-slate-300" />
+
           <p className="mt-3 text-sm font-semibold text-slate-900">
             Primero crea tu torneo
           </p>
+
           <Link
             to="/tournament"
             className="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-700"
@@ -85,6 +96,7 @@ export function TeamsPage() {
           title="Equipos"
           description="Los equipos pertenecen a una categoría."
         />
+
         <Card>
           <EmptyState
             icon={Users}
@@ -112,6 +124,7 @@ export function TeamsPage() {
           title="Equipos"
           description="Gestiona los equipos por categoría."
         />
+
         <ButtonLink to="/teams/new" className="shrink-0 self-start">
           <Plus size={16} />
           Nuevo equipo
@@ -125,22 +138,25 @@ export function TeamsPage() {
         >
           Categoría
         </label>
+
         <select
           id="filter-cat"
           value={categoryId}
-          onChange={(e) => {
-            setCategoryId(e.target.value);
+          onChange={(event) => {
+            setCategoryId(event.target.value);
             setPage(1);
           }}
           className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         >
           <option value="">Todas</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
+
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.title}
             </option>
           ))}
         </select>
+
         <span className="text-xs text-slate-400">
           {total} {total === 1 ? "equipo" : "equipos"}
         </span>
@@ -176,10 +192,12 @@ export function TeamsPage() {
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-xs font-bold text-blue-700">
                     {team.abbreviation}
                   </span>
+
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-slate-900">
                       {team.name}
                     </p>
+
                     <p className="truncate text-xs text-slate-500">
                       {categoryMap.get(team.categoryId) ?? "Sin categoría"}
                     </p>
@@ -189,33 +207,13 @@ export function TeamsPage() {
             ))}
           </ul>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 sm:px-6">
-              <p className="text-xs text-slate-500">
-                Página {page} de {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="!px-2.5"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  <ChevronLeft size={16} />
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="!px-2.5"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  <ChevronRight size={16} />
-                </Button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            page={page}
+            limit={PAGE_SIZE}
+            totalPages={totalPages}
+            total={total}
+            onPageChange={setPage}
+          />
         </Card>
       )}
     </div>

@@ -1,5 +1,6 @@
 
 import {
+    keepPreviousData,
     useMutation,
     useQuery,
     useQueryClient,
@@ -28,12 +29,15 @@ export function useMatches(
         queryFn: () =>
             matchesService.listByTournament(tournamentId!, q),
         enabled: !!tournamentId,
+        placeholderData: keepPreviousData,
     });
 
     return {
         matches: result.data?.matches ?? [],
         pagination: result.data?.pagination ?? null,
         isLoading: result.isLoading,
+        isFetching: result.isFetching,
+        isPlaceholderData: result.isPlaceholderData,
         isError: result.isError,
     };
 }
@@ -45,8 +49,8 @@ interface CreateMatchesItem {
 }
 
 /**
- * Crea varios partidos en serie: cada error queda asociado a su fila
- * y un fallo no detiene los demás.
+ * Crea varios partidos en serie.
+ * Cada error queda asociado a su fila y un fallo no detiene los demás.
  */
 export function useCreateMatches(tournamentId: string) {
     const qc = useQueryClient();
@@ -66,8 +70,8 @@ export function useCreateMatches(tournamentId: string) {
                 try {
                     await matchesService.create(tournamentId, item.input);
                     created += 1;
-                } catch (err) {
-                    errors[item.key] = err;
+                } catch (error) {
+                    errors[item.key] = error;
                 }
 
                 onProgress?.(index + 1, items.length);
@@ -75,7 +79,6 @@ export function useCreateMatches(tournamentId: string) {
 
             return { created, errors };
         },
-
         onSettled: () =>
             qc.invalidateQueries({
                 queryKey: ["matches", tournamentId],
@@ -88,16 +91,21 @@ export function useUpdateMatch(tournamentId: string) {
 
     return useMutation({
         mutationFn: ({
-            matchId,
+            id,
             input,
         }: {
-            matchId: string;
+            id: string;
             input: MatchUpdateInput;
-        }) => matchesService.update(matchId, input),
+        }) => matchesService.update(id, input),
 
-        onSuccess: () =>
+        onSuccess: () => {
             qc.invalidateQueries({
                 queryKey: ["matches", tournamentId],
-            }),
+            });
+
+            qc.invalidateQueries({
+                queryKey: ["phase"],
+            });
+        },
     });
 }

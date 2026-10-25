@@ -1,4 +1,3 @@
-
 export {
     useCreateMatches,
     useMatches,
@@ -18,3 +17,5 @@ export type {
     MatchStatus,
     MatchUpdateInput,
 } from "./types";
+
+export { CalendarsPage } from "./pages/CalendarsPage";
