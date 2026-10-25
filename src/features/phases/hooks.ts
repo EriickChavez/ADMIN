@@ -1,7 +1,18 @@
 import { useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    keepPreviousData,
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from "@tanstack/react-query";
 import { phasesService } from "./services/phases";
-import type { PhaseGroupInput, PhaseInput, SyncPhaseTeamItem } from "./types";
+import type {
+    ClosePhasePayload,
+    PhaseGroupInput,
+    PhaseInput,
+    SetManualRanksPayload,
+    SyncPhaseTeamItem,
+} from "./types";
 
 const listKey = (tournamentId?: string, categoryId?: string) =>
     ["phases", tournamentId, categoryId] as const;
@@ -141,5 +152,73 @@ export function useSyncPhaseTeams(phaseId: string) {
         mutationFn: (teams: SyncPhaseTeamItem[]) =>
             phasesService.syncTeams(phaseId, teams),
         onSuccess: () => qc.invalidateQueries({ queryKey: teamsKey(phaseId) }),
+    });
+}
+
+// ---- Posiciones, desempates y cierre ----
+
+const standingsKey = (tournamentId?: string, phaseId?: string) =>
+    ["matches", tournamentId, "standings", phaseId] as const;
+
+export function usePhaseStandings(
+    tournamentId: string | undefined,
+    phaseId: string | undefined,
+    perGroup: number,
+    bestNext: number,
+) {
+    const query = useQuery({
+        // Cuelga de ["matches", tournamentId] a propósito: las posiciones se calculan con
+        // los partidos, así que al finalizar uno (o cambiar sus goles) esa clave ya se
+        // invalida y las tablas se refrescan solas.
+        queryKey: [...standingsKey(tournamentId, phaseId), perGroup, bestNext],
+        queryFn: () => phasesService.getStandings(phaseId!, { perGroup, bestNext }),
+        enabled: !!tournamentId && !!phaseId,
+        // Mientras cambias los números no parpadea la pantalla.
+        placeholderData: keepPreviousData,
+    });
+
+    return {
+        data: query.data ?? null,
+        isLoading: query.isLoading,
+        isFetching: query.isFetching,
+        error: query.error,
+        refetch: query.refetch,
+    };
+}
+
+export function useSetManualRanks(tournamentId: string, phaseId: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: SetManualRanksPayload) =>
+            phasesService.setManualRanks(phaseId, payload),
+        onSuccess: () =>
+            qc.invalidateQueries({ queryKey: standingsKey(tournamentId, phaseId) }),
+    });
+}
+
+function useRefreshAfterClosure(tournamentId: string, phaseId: string) {
+    const qc = useQueryClient();
+    return () => {
+        // La fase pasa a "finished" (o vuelve): se refrescan la fase, sus tablas y el listado.
+        qc.invalidateQueries({ queryKey: ["phase", phaseId] });
+        qc.invalidateQueries({ queryKey: standingsKey(tournamentId, phaseId) });
+        qc.invalidateQueries({ queryKey: ["phases", tournamentId] });
+    };
+}
+
+export function useClosePhase(tournamentId: string, phaseId: string) {
+    const refresh = useRefreshAfterClosure(tournamentId, phaseId);
+    return useMutation({
+        mutationFn: (payload: ClosePhasePayload) =>
+            phasesService.closePhase(phaseId, payload),
+        onSuccess: refresh,
+    });
+}
+
+export function useReopenPhase(tournamentId: string, phaseId: string) {
+    const refresh = useRefreshAfterClosure(tournamentId, phaseId);
+    return useMutation({
+        mutationFn: () => phasesService.reopenPhase(phaseId),
+        onSuccess: refresh,
     });
 }

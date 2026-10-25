@@ -6,4 +6,7 @@ export { PhaseEditPage } from "./pages/PhaseEditPage";
 export { PhaseStructurePage } from "./pages/PhaseStructurePage";
 export { PhaseFixturesPage } from "./pages/PhaseFixturesPage";
 export { PhaseResultsPage } from "./pages/PhaseResultsPage";
-export type { Phase } from "./types";
+export { PhaseWorkspaceNav } from "./components/PhaseWorkspaceNav";
+export { PhaseStandingsPage } from "./components/PhaseStandingsPage";
+
+export type { Phase } from "./types"; 

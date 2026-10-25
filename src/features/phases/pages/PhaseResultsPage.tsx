@@ -43,9 +43,9 @@ export function PhaseResultsPage() {
     );
   }
 
-  // En una eliminatoria los resultados se capturan desde la llave.
+  // En una eliminatoria los resultados se siguen desde la llave.
   if (phase.type === "knockout") {
-    return <Navigate to={`/phases/${phase.id}`} replace />;
+    return <Navigate to={`/phases/${phase.id}/bracket`} replace />;
   }
 
   return (

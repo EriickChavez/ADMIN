@@ -29,6 +29,12 @@ export function getMatchErrorMessage(error: unknown): string {
             return "Para iniciar, finalizar o reabrir un partido usa los botones de la cédula";
         case "MATCH_HAS_EVENTS":
             return "No se pueden cambiar los equipos ni la categoría de un partido que ya tiene eventos";
+        case "INVALID_PENALTIES":
+            return "Penales inválidos: no pueden quedar empatados";
+        case "BRACKET_ADVANCE_CONFLICT":
+            return "Este cambio alteraría quién avanza, y el siguiente cruce ya tiene partido. Borra o reprograma ese partido primero";
+        case "BRACKET_MATCH_TEAMS_LOCKED":
+            return "Los equipos de un partido de la llave no se pueden cambiar";
         case "CATEGORY_CLOSED":
         case "CATEGORY_FINISHED":
             return "El campeonato de esta categoría está cerrado: ya no se pueden crear ni modificar partidos. Reábrelo primero";

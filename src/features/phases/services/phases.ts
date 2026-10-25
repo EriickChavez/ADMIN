@@ -1,15 +1,20 @@
 import { api } from "../../../api/client";
 import type {
+    ClosePhasePayload,
+    ManualRank,
     Phase,
+    PhaseClosure,
     PhaseGroup,
     PhaseGroupInput,
     PhaseGroupResponse,
     PhaseGroupsResponse,
     PhaseInput,
     PhaseResponse,
+    PhaseStandingsResponse,
     PhasesResponse,
     PhaseTeam,
     PhaseTeamsResponse,
+    SetManualRanksPayload,
     SyncPhaseTeamItem,
 } from "../types";
 
@@ -113,5 +118,49 @@ export const phasesService = {
             { teams },
         );
         return data.teams ?? [];
+    },
+
+    // ---- Posiciones, desempates y cierre ----
+
+    getStandings: async (
+        phaseId: string,
+        params: { perGroup: number; bestNext: number },
+    ): Promise<PhaseStandingsResponse> => {
+        const { data } = await api.get<PhaseStandingsResponse>(
+            `/phases/${phaseId}/standings`,
+            { params },
+        );
+        return data;
+    },
+
+    // Reemplaza todas las decisiones manuales de un tipo (group o best_next).
+    setManualRanks: async (
+        phaseId: string,
+        payload: SetManualRanksPayload,
+    ): Promise<ManualRank[]> => {
+        const { data } = await api.put<{ manualRanks: ManualRank[] }>(
+            `/phases/${phaseId}/standings/manual-ranks`,
+            payload,
+        );
+        return data.manualRanks ?? [];
+    },
+
+    closePhase: async (
+        phaseId: string,
+        payload: ClosePhasePayload,
+    ): Promise<{ phase: Phase; closure: PhaseClosure }> => {
+        const { data } = await api.post<{ phase: Phase; closure: PhaseClosure }>(
+            `/phases/${phaseId}/close`,
+            payload,
+        );
+        return data;
+    },
+
+    reopenPhase: async (phaseId: string): Promise<Phase> => {
+        const { data } = await api.post<PhaseResponse>(
+            `/phases/${phaseId}/reopen`,
+            {},
+        );
+        return data.phase;
     },
 };

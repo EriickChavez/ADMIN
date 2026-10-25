@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Clock3,
   GitBranch,
+  ListOrdered,
   Pencil,
   Trophy,
   Users,
@@ -171,6 +172,17 @@ export function PhaseDetailPage() {
       to: `/phases/${phase.id}/results`,
       icon: ClipboardList,
     });
+    steps.push({
+      id: "standings",
+      title: "Revisa posiciones y cierra la fase",
+      description:
+        phase.status === "finished"
+          ? "Fase cerrada: los clasificados quedaron guardados."
+          : "Define cuántos clasifican, resuelve empates y cierra la fase.",
+      done: phase.status === "finished",
+      to: `/phases/${phase.id}/standings`,
+      icon: ListOrdered,
+    });
   } else if (phase.type === "league") {
     steps.push({
       id: "structure",
@@ -186,11 +198,13 @@ export function PhaseDetailPage() {
   } else {
     steps.push({
       id: "bracket",
-      title: "Configura la eliminatoria",
+      title: "Genera y juega la llave",
       description:
-        "Los cruces deben generarse a partir de una fase de origen cerrada y sus clasificados.",
-      done: false,
-      to: `/phases/${phase.id}/edit`,
+        matchesTotal === 0
+          ? "Genera la llave a partir de una fase de grupos cerrada y programa sus cruces."
+          : `${finishedMatches} de ${matchesTotal} partidos finalizados`,
+      done: matchesTotal > 0 && finishedMatches === matchesTotal,
+      to: `/phases/${phase.id}/bracket`,
       icon: GitBranch,
     });
   }
@@ -386,8 +400,7 @@ export function PhaseDetailPage() {
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
                   Comprueba las asignaciones y los partidos existentes antes de
-                  modificar la estructura. Los mocks conservan los cambios
-                  localmente en este navegador.
+                  modificar la estructura.
                 </p>
                 <Link
                   to={`/phases/${phase.id}/edit`}
@@ -409,8 +422,8 @@ export function PhaseDetailPage() {
           role="status"
           className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
         >
-          Algunos indicadores no pudieron actualizarse. Revisa la conexión de
-          mocks e inténtalo de nuevo.
+          Algunos indicadores no pudieron actualizarse. Revisa la conexión e
+          inténtalo de nuevo.
         </p>
       ) : null}
     </div>

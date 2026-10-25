@@ -20,6 +20,7 @@ import {
   PhaseNewPage,
   PhaseResultsPage,
   PhasesPage,
+  PhaseStandingsPage,
   PhaseStructurePage,
 } from "./features/phases";
 import {
@@ -30,6 +31,7 @@ import {
 import { TeamDetailPage, TeamNewPage, TeamsPage } from "./features/teams";
 import { BrandingPage, TournamentPage } from "./features/tournaments";
 import { AppLayout } from "./app/layouts/AppLayout";
+import { PhaseBracketPage } from "./features/brackets/components/PhaseBracketPage";
 
 export default function App() {
   return (
@@ -58,6 +60,11 @@ export default function App() {
           />
           <Route path="/phases/:id/fixtures" element={<PhaseFixturesPage />} />
           <Route path="/phases/:id/results" element={<PhaseResultsPage />} />
+          <Route
+            path="/phases/:id/standings"
+            element={<PhaseStandingsPage />}
+          />
+          <Route path="/phases/:id/bracket" element={<PhaseBracketPage />} />
           <Route path="/phases/:id/edit" element={<PhaseEditPage />} />
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/teams/new" element={<TeamNewPage />} />

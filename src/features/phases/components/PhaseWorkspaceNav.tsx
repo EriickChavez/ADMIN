@@ -2,6 +2,8 @@ import { NavLink } from "react-router-dom";
 import {
   CalendarDays,
   ClipboardList,
+  GitBranch,
+  ListOrdered,
   Pencil,
   Settings2,
   Trophy,
@@ -10,7 +12,14 @@ import type { Phase } from "../types";
 
 interface PhaseWorkspaceNavProps {
   phase: Phase;
-  current: "overview" | "structure" | "fixtures" | "results" | "edit";
+  current:
+    | "overview"
+    | "structure"
+    | "fixtures"
+    | "results"
+    | "standings"
+    | "bracket"
+    | "edit";
 }
 
 const base =
@@ -47,6 +56,20 @@ export function PhaseWorkspaceNav({ phase, current }: PhaseWorkspaceNavProps) {
       to: `/phases/${phase.id}/results`,
       icon: ClipboardList,
       show: phase.type !== "knockout",
+    },
+    {
+      id: "standings",
+      label: "Posiciones",
+      to: `/phases/${phase.id}/standings`,
+      icon: ListOrdered,
+      show: phase.type === "group",
+    },
+    {
+      id: "bracket",
+      label: "Llave",
+      to: `/phases/${phase.id}/bracket`,
+      icon: GitBranch,
+      show: phase.type === "knockout",
     },
     {
       id: "edit",
