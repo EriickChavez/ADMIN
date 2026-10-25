@@ -97,7 +97,10 @@ export function CategoriesPage() {
         <Card className="overflow-hidden">
           <ul className="divide-y divide-slate-100">
             {categories.map((c) => (
-              <li key={c.id} className="flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <li
+                key={c.id}
+                className="flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+              >
                 <Link
                   to={`/phases?categoryId=${encodeURIComponent(c.id)}`}
                   aria-label={`Entrar a las fases de ${c.title}`}
@@ -111,16 +114,19 @@ export function CategoriesPage() {
                       {ageRange(c)}
                       {c.description ? ` · ${c.description}` : ""}
                     </p>
-                    <p className="mt-1 text-xs font-medium text-blue-700">Ver fases y partidos <ArrowRight size={13} className="ml-1 inline" /></p>
+                    <p className="mt-1 text-xs font-medium text-blue-700">
+                      Ver fases y partidos{" "}
+                      <ArrowRight size={13} className="ml-1 inline" />
+                    </p>
                   </div>
-                  <span className="shrink-0 text-xs font-medium text-slate-400">#{c.order}</span>
                 </Link>
                 <Link
                   to={`/categories/${c.id}`}
                   aria-label={`Editar categoría ${c.title}`}
                   className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 sm:self-center"
                 >
-                  <Pencil size={14} />Editar
+                  <Pencil size={14} />
+                  Editar
                 </Link>
               </li>
             ))}

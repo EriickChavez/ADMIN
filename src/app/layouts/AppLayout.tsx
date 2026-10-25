@@ -20,9 +20,11 @@ const APP_NAME = "Nova";
 export function AppLayout() {
   const { user, logout } = useAuth();
   const { tournament, isLoading } = useMyTournament();
+
   const { categories, isLoading: loadingCategories } = useCategories(
     tournament?.id,
   );
+
   const [open, setOpen] = useState(false);
   const closeSidebar = useCallback(() => setOpen(false), []);
 
@@ -31,29 +33,56 @@ export function AppLayout() {
         {
           title: "Torneo",
           items: [
-            { to: "/tournament", label: "Tu torneo", icon: Settings },
-            { to: "/tournament/branding", label: "Branding", icon: ImageIcon },
+            {
+              to: "/tournament",
+              label: "Tu torneo",
+              icon: Settings,
+            },
+            {
+              to: "/tournament/branding",
+              label: "Branding",
+              icon: ImageIcon,
+            },
             {
               to: "/categories",
               label: "Categorías",
               icon: Layers,
               children: loadingCategories
                 ? []
-                : categories.map((c) => ({
-                    to: `/categories/${c.id}`,
-                    label: c.title,
+                : categories.map((category) => ({
+                    // Redirige al panel de fases de esta categoría.
+                    to: `/phases?categoryId=${encodeURIComponent(category.id)}`,
+                    label: category.title,
                   })),
             },
-            { to: "/teams", label: "Equipos", icon: Users },
-            { to: "/players", label: "Jugadores", icon: UserRound },
-            { to: "/calendar", label: "Calendarios", icon: CalendarDays },
+            {
+              to: "/teams",
+              label: "Equipos",
+              icon: Users,
+            },
+            {
+              to: "/players",
+              label: "Jugadores",
+              icon: UserRound,
+            },
+            {
+              to: "/calendar",
+              label: "Calendarios",
+              icon: CalendarDays,
+            },
           ],
         },
       ]
     : [
         {
           title: "Torneo",
-          items: [{ to: "/tournament", label: "Crear torneo", icon: Plus }],
+          items: [
+            {
+              to: "/tournament",
+              label: "Crear torneo",
+              icon: Plus,
+            },
+          ],
           hint: "Crea tu torneo para desbloquear branding, categorías y calendario.",
         },
       ];
@@ -79,6 +108,7 @@ export function AppLayout() {
           >
             <Menu size={20} />
           </button>
+
           <span className="font-bold text-slate-900">{APP_NAME}</span>
         </header>
 

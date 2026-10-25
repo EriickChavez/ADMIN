@@ -10,6 +10,7 @@ import {
   useUpdateTournament,
 } from "../hooks";
 import type { TournamentFormValues } from "../types";
+import { ImportSection } from "../../imports/components/ImportSection";
 
 const emptyValues: TournamentFormValues = {
   name: "",
@@ -117,6 +118,11 @@ export function TournamentPage() {
           </div>
         </aside>
       </div>
+      {tournament && (
+        <section className="mt-8">
+          <ImportSection tournamentId={tournament.id} />
+        </section>
+      )}
     </div>
   );
 }

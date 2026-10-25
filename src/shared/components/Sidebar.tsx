@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   ChevronDown,
   LifeBuoy,
@@ -65,25 +65,23 @@ function NavItem({
   onNavigate: () => void;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const location = useLocation();
+
   const Icon = item.icon;
   const hasChildren = !!item.children?.length;
 
   return (
     <div>
       <div className="flex items-center gap-1">
-        <NavLink
-          to={item.to}
-          end={hasChildren || item.to === "/"}
-          onClick={onNavigate}
-          className={parentClass}
-        >
+        <NavLink to={item.to} end onClick={onNavigate} className={parentClass}>
           <Icon size={18} className="shrink-0 text-slate-500" />
           <span className="truncate">{item.label}</span>
         </NavLink>
 
         {hasChildren && (
           <button
-            onClick={() => setExpanded((v) => !v)}
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
             aria-expanded={expanded}
             aria-label={expanded ? "Contraer" : "Expandir"}
             className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-200/60 hover:text-slate-700"
@@ -98,17 +96,31 @@ function NavItem({
 
       {hasChildren && expanded && (
         <div className="ml-[21px] mt-1 space-y-0.5 border-l border-slate-200 pl-3">
-          {item.children!.map(({ to, label, icon: ChildIcon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={onNavigate}
-              className={childClass}
-            >
-              {ChildIcon && <ChildIcon size={14} className="shrink-0" />}
-              <span className="truncate">{label}</span>
-            </NavLink>
-          ))}
+          {item.children!.map(({ to, label, icon: ChildIcon }) => {
+            const [pathname, ...queryParts] = to.split("?");
+            const expectedSearch = queryParts.length
+              ? `?${queryParts.join("?")}`
+              : "";
+
+            // Compara la ruta y los parámetros para activar solo
+            // el subítem que corresponde a la URL actual.
+            const isActive =
+              location.pathname === pathname &&
+              location.search === expectedSearch;
+
+            return (
+              <Link
+                key={to}
+                to={to}
+                onClick={onNavigate}
+                aria-current={isActive ? "page" : undefined}
+                className={childClass({ isActive })}
+              >
+                {ChildIcon && <ChildIcon size={14} className="shrink-0" />}
+                <span className="truncate">{label}</span>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
@@ -127,16 +139,19 @@ export function Sidebar({
   useEffect(() => {
     if (!open) return;
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
     };
+
     const desktop = window.matchMedia("(min-width: 1024px)");
-    const onBreakpoint = (e: MediaQueryListEvent) => {
-      if (e.matches) onClose();
+
+    const onBreakpoint = (event: MediaQueryListEvent) => {
+      if (event.matches) onClose();
     };
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     document.addEventListener("keydown", onKeyDown);
     desktop.addEventListener("change", onBreakpoint);
 
@@ -166,11 +181,14 @@ export function Sidebar({
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
               <LifeBuoy size={20} />
             </span>
+
             <span className="text-base font-bold text-slate-900">
               {appName}
             </span>
           </Link>
+
           <button
+            type="button"
             onClick={onClose}
             aria-label="Cerrar menú"
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-200/60 lg:hidden"
@@ -182,26 +200,28 @@ export function Sidebar({
         <nav className="flex-1 space-y-6 overflow-y-auto p-3">
           {loading ? (
             <div className="space-y-2 pt-2">
-              {[0, 1, 2].map((i) => (
+              {[0, 1, 2].map((item) => (
                 <div
-                  key={i}
+                  key={item}
                   className="h-9 animate-pulse rounded-lg bg-slate-200/70"
                 />
               ))}
             </div>
           ) : (
-            sections.map((section, i) => (
-              <div key={section.title ?? i}>
+            sections.map((section, index) => (
+              <div key={section.title ?? index}>
                 {section.title && (
                   <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
                     {section.title}
                   </p>
                 )}
+
                 <div className="space-y-1">
                   {section.items.map((item) => (
                     <NavItem key={item.to} item={item} onNavigate={onClose} />
                   ))}
                 </div>
+
                 {section.hint && (
                   <p className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs leading-relaxed text-blue-700">
                     {section.hint}
@@ -225,13 +245,16 @@ export function Sidebar({
                 {user.displayName.charAt(0).toUpperCase()}
               </div>
             )}
+
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-slate-900">
                 {user.displayName}
               </p>
               <p className="truncate text-xs text-slate-500">{user.email}</p>
             </div>
+
             <button
+              type="button"
               onClick={onLogout}
               title="Cerrar sesión"
               aria-label="Cerrar sesión"
