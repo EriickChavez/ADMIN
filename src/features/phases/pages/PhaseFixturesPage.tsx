@@ -6,6 +6,8 @@ import { useMyTournament } from "../../tournaments";
 import { PhaseFixtures } from "../components/PhaseFixtures";
 import { usePhase } from "../hooks";
 import { PhaseWorkspaceNav } from "../components/PhaseWorkspaceNav";
+import { PhaseMatchesManager } from "../components/PhaseMatchesManager";
+import { PhaseStandingsPanel } from "../components/PhaseStandingsPanel";
 
 export function PhaseFixturesPage() {
   const { id } = useParams<{ id: string }>();
@@ -43,7 +45,6 @@ export function PhaseFixturesPage() {
     );
   }
 
-  // El calendario todos contra todos por grupo solo aplica a fases de grupos.
   if (phase.type !== "group") {
     return <Navigate to={`/phases/${phase.id}`} replace />;
   }
@@ -65,6 +66,8 @@ export function PhaseFixturesPage() {
 
       <PhaseWorkspaceNav phase={phase} current="fixtures" />
       <PhaseFixtures phase={phase} />
+      <PhaseMatchesManager phase={phase} />
+      <PhaseStandingsPanel phase={phase} />
     </div>
   );
 }

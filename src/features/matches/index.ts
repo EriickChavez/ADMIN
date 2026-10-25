@@ -1,4 +1,20 @@
-export { useCreateMatches, useMatches } from "./hooks";
-export { datetimeLocalToIso, isoToDatetimeLocal } from "./utils/datetime";
+
+export {
+    useCreateMatches,
+    useMatches,
+    useUpdateMatch,
+} from "./hooks";
+
+export {
+    datetimeLocalToIso,
+    isoToDatetimeLocal,
+} from "./utils/datetime";
+
 export { getMatchErrorMessage } from "./utils/errors";
-export type { Match, MatchInput, MatchStatus } from "./types";
+
+export type {
+    Match,
+    MatchInput,
+    MatchStatus,
+    MatchUpdateInput,
+} from "./types";

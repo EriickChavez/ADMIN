@@ -1,3 +1,4 @@
+
 export type MatchStatus =
     | "scheduled"
     | "in_progress"
@@ -53,6 +54,16 @@ export interface MatchesResponse {
 
 export interface MatchResponse {
     match: Match;
+}
+
+export interface MatchUpdateInput {
+    scheduledAt?: string;
+    venue?: string | null;
+    status?: MatchStatus;
+    homeScore?: number | null;
+    awayScore?: number | null;
+    homePenalties?: number | null;
+    awayPenalties?: number | null;
 }
 
 export interface MatchInput {
