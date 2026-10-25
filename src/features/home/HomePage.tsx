@@ -12,7 +12,7 @@ import {
   Trophy,
   type LucideIcon,
 } from "lucide-react";
-import { API_URL } from "../../api/client";
+import { resolveBrandingAsset } from "../../shared/utils/branding-assets";
 import { useAuth } from "../auth";
 import { useCategories, type Category } from "../categories";
 import { useMyTournament, type Tournament } from "../tournaments";
@@ -20,6 +20,7 @@ import { ButtonLink } from "../../shared/components/ui/Button";
 import { Card } from "../../shared/components/ui/Card";
 import { EmptyState } from "../../shared/components/ui/EmptyState";
 import { PageHeader } from "../../shared/components/ui/PageHeader";
+import { useMatches } from "../matches";
 
 const parseDate = (date: string) => new Date(`${date}T00:00:00`);
 
@@ -40,11 +41,6 @@ const getInitials = (name: string) =>
     .map((word) => word[0])
     .join("")
     .toUpperCase();
-
-const assetUrl = (path: string) =>
-  /^https?:\/\//.test(path) || path.startsWith("data:")
-    ? path
-    : `${API_URL}${path}`;
 
 const getDurationDays = (t: Tournament): number | null => {
   if (!t.startDate || !t.endDate) return null;
@@ -189,6 +185,8 @@ export function HomePage() {
   const { categories, isLoading: loadingCategories } = useCategories(
     tournament?.id,
   );
+  const { pagination: matchesPagination, isLoading: loadingMatches } =
+    useMatches(tournament?.id, { limit: 1 });
 
   if (isLoading) return <HomeSkeleton />;
 
@@ -220,7 +218,7 @@ export function HomePage() {
     {
       title: "Programa el calendario",
       description: "Agenda los partidos de cada categoría.",
-      done: false,
+      done: !loadingMatches && (matchesPagination?.total ?? 0) > 0,
       to: "/calendar",
     },
   ];
@@ -268,7 +266,10 @@ export function HomePage() {
                 >
                   {tournament.branding?.bannerUrl ? (
                     <img
-                      src={assetUrl(tournament.branding.bannerUrl)}
+                      src={
+                        resolveBrandingAsset(tournament.branding.bannerUrl) ??
+                        undefined
+                      }
                       alt=""
                       className="h-full w-full object-cover"
                     />
@@ -286,7 +287,11 @@ export function HomePage() {
                       <span className="-mt-10 flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-blue-600 text-lg font-bold text-white shadow-md ring-1 ring-slate-200/60">
                         {tournament.branding?.logoUrl ? (
                           <img
-                            src={assetUrl(tournament.branding.logoUrl)}
+                            src={
+                              resolveBrandingAsset(
+                                tournament.branding.logoUrl,
+                              ) ?? undefined
+                            }
                             alt=""
                             className="h-full w-full object-cover"
                           />

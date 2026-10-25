@@ -14,7 +14,8 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { API_URL, ApiError } from "../../../api/client";
+import { ApiError } from "../../../api/client";
+import { resolveBrandingAsset } from "../../../shared/utils/branding-assets";
 import { PageHeader } from "../../../shared/components/ui/PageHeader";
 import { Button } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
@@ -27,12 +28,6 @@ const BANNER_MAX = 5 * 1024 * 1024;
 const ALLOWED = ["image/png", "image/jpeg", "image/webp"];
 
 type Slot = "logo" | "banner";
-
-const resolveAsset = (path: string | null) => {
-  if (!path) return null;
-  if (/^https?:\/\//.test(path) || path.startsWith("data:")) return path;
-  return `${API_URL}${path}`;
-};
 
 function validateFile(file: File, slot: Slot): string | null {
   if (!ALLOWED.includes(file.type)) {
@@ -90,7 +85,7 @@ function DropZone({
     return () => URL.revokeObjectURL(url);
   }, [pendingFile]);
 
-  const previewUrl = objectUrl ?? resolveAsset(currentUrl);
+  const previewUrl = objectUrl ?? resolveBrandingAsset(currentUrl);
 
   const handleFiles = (files: FileList | null) => {
     const file = files?.[0];
@@ -393,7 +388,7 @@ export function BrandingPage() {
                   onSelect={selectLogo}
                   error={logoError}
                   className="mx-auto h-40 w-40 sm:mx-0 sm:h-44 sm:w-44"
-                  imageClassName="object-cover"
+                  imageClassName="bg-white object-cover p-2 rounded-2xl"
                 />
               </div>
 
@@ -406,7 +401,7 @@ export function BrandingPage() {
                 onSelect={selectBanner}
                 error={bannerError}
                 className="h-40 sm:h-48"
-                imageClassName="object-cover"
+                imageClassName="bg-white object-cover p-2 rounded-2xl"
               />
             </div>
 

@@ -1,5 +1,5 @@
 import { CalendarDays, Globe, Link2 } from "lucide-react";
-import { API_URL } from "../../../api/client";
+import { resolveBrandingAsset } from "../../../shared/utils/branding-assets";
 import { Card } from "../../../shared/components/ui/Card";
 import { formatDate } from "../../../shared/utils/dates";
 import type { TournamentBranding, TournamentFormValues } from "../types";
@@ -8,11 +8,6 @@ interface TournamentPreviewProps {
   values: TournamentFormValues;
   branding: TournamentBranding | null;
 }
-
-const assetUrl = (path: string) =>
-  /^https?:\/\//.test(path) || path.startsWith("data:")
-    ? path
-    : `${API_URL}${path}`;
 
 const getInitials = (name: string) =>
   name
@@ -41,14 +36,14 @@ export function TournamentPreview({
   return (
     <Card className="overflow-hidden">
       <div
-        className="relative h-28"
+        className="relative z-0 h-32 overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-600"
         style={{ backgroundImage: "linear-gradient(135deg, #2563eb, #4f46e5)" }}
       >
         {branding?.bannerUrl ? (
           <img
-            src={assetUrl(branding.bannerUrl)}
+            src={resolveBrandingAsset(branding.bannerUrl) ?? undefined}
             alt=""
-            className="h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
           <div className="absolute inset-0 opacity-30">
@@ -58,13 +53,13 @@ export function TournamentPreview({
         )}
       </div>
 
-      <div className="px-5 pb-5">
-        <div className="-mt-9 flex h-[4.25rem] w-[4.25rem] items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-blue-600 text-lg font-bold text-white shadow-md ring-1 ring-slate-200/50 z-1">
+      <div className="relative z-10 px-5 pb-5">
+        <div className="relative z-10 -mt-10 flex h-[4.75rem] w-[4.75rem] items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-white text-lg font-bold text-blue-700 shadow-md ring-1 ring-slate-200/50">
           {branding?.logoUrl ? (
             <img
-              src={assetUrl(branding.logoUrl)}
+              src={resolveBrandingAsset(branding.logoUrl) ?? undefined}
               alt=""
-              className="h-full w-full object-cover z-2"
+              className="absolute inset-0 h-full w-full bg-white object-contain p-1"
             />
           ) : name ? (
             getInitials(name)
