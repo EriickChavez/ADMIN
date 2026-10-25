@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Outlet } from "react-router-dom";
 import {
   CalendarDays,
+  Home,
   ImageIcon,
   Layers,
   Menu,
@@ -30,6 +31,16 @@ export function AppLayout() {
 
   const sections: SidebarSection[] = tournament
     ? [
+        {
+          title: "Home",
+          items: [
+            {
+              to: "/",
+              label: "Dashboard",
+              icon: Home,
+            },
+          ],
+        },
         {
           title: "Torneo",
           items: [
