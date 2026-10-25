@@ -5,6 +5,7 @@ import { playersHandlers } from "../features/players/mocks";
 import { phasesHandlers } from "../features/phases/mocks";
 import { brandingHandlers } from "../features/tournaments/mocks/branding";
 import { tournamentsHandlers } from "../features/tournaments/mocks";
+import { phaseStructureHandlers } from "../features/phases/mocks-structure";
 
 export const handlers = [
     ...authHandlers,
@@ -14,4 +15,5 @@ export const handlers = [
     ...teamsHandlers,
     ...playersHandlers,
     ...phasesHandlers,
+    ...phaseStructureHandlers,
 ];

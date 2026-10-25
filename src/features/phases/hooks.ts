@@ -1,9 +1,12 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { phasesService } from "./services/phases";
-import type { PhaseInput } from "./types";
+import type { PhaseGroupInput, PhaseInput, SyncPhaseTeamItem } from "./types";
 
 const listKey = (tournamentId?: string, categoryId?: string) =>
     ["phases", tournamentId, categoryId] as const;
+const groupsKey = (phaseId?: string) => ["phase-groups", phaseId] as const;
+const teamsKey = (phaseId?: string) => ["phase-teams", phaseId] as const;
 
 export function usePhases(tournamentId?: string, categoryId?: string) {
     const query = useQuery({
@@ -67,5 +70,76 @@ export function useDeletePhase(tournamentId: string, categoryId: string) {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: listKey(tournamentId, categoryId) });
         },
+    });
+}
+
+// ---- Grupos ----
+
+export function usePhaseGroups(phaseId?: string) {
+    const query = useQuery({
+        queryKey: groupsKey(phaseId),
+        queryFn: () => phasesService.listGroups(phaseId!),
+        enabled: !!phaseId,
+    });
+
+    const groups = useMemo(
+        () =>
+            [...(query.data ?? [])].sort(
+                (a, b) =>
+                    a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "es"),
+            ),
+        [query.data],
+    );
+
+    return {
+        groups,
+        isLoading: query.isLoading,
+        isError: query.isError,
+    };
+}
+
+export function useCreatePhaseGroup(phaseId: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (input: PhaseGroupInput) =>
+            phasesService.createGroup(phaseId, input),
+        onSuccess: () => qc.invalidateQueries({ queryKey: groupsKey(phaseId) }),
+    });
+}
+
+export function useDeletePhaseGroup(phaseId: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (groupId: string) => phasesService.removeGroup(groupId),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: groupsKey(phaseId) });
+            // Los equipos de ese grupo quedan sin grupo.
+            qc.invalidateQueries({ queryKey: teamsKey(phaseId) });
+        },
+    });
+}
+
+// ---- Equipos de la fase ----
+
+export function usePhaseTeams(phaseId?: string) {
+    const query = useQuery({
+        queryKey: teamsKey(phaseId),
+        queryFn: () => phasesService.listTeams(phaseId!),
+        enabled: !!phaseId,
+    });
+
+    return {
+        assignments: query.data ?? [],
+        isLoading: query.isLoading,
+        isError: query.isError,
+    };
+}
+
+export function useSyncPhaseTeams(phaseId: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (teams: SyncPhaseTeamItem[]) =>
+            phasesService.syncTeams(phaseId, teams),
+        onSuccess: () => qc.invalidateQueries({ queryKey: teamsKey(phaseId) }),
     });
 }

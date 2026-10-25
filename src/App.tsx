@@ -11,7 +11,13 @@ import {
   CategoryNewPage,
 } from "./features/categories";
 import { HomePage } from "./features/home";
-import { PhaseDetailPage, PhaseNewPage, PhasesPage } from "./features/phases";
+import {
+  PhaseDetailPage,
+  PhaseEditPage,
+  PhaseNewPage,
+  PhasesPage,
+  PhaseStructurePage,
+} from "./features/phases";
 import {
   PlayerDetailPage,
   PlayerNewPage,
@@ -40,6 +46,11 @@ export default function App() {
           <Route path="/phases" element={<PhasesPage />} />
           <Route path="/phases/new" element={<PhaseNewPage />} />
           <Route path="/phases/:id" element={<PhaseDetailPage />} />
+          <Route
+            path="/phases/:id/structure"
+            element={<PhaseStructurePage />}
+          />
+          <Route path="/phases/:id/edit" element={<PhaseEditPage />} />
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/teams/new" element={<TeamNewPage />} />
           <Route path="/teams/:id" element={<TeamDetailPage />} />

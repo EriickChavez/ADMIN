@@ -8,7 +8,11 @@ import type {
   PhaseStatus,
   PhaseType,
 } from "../types";
-import { PHASE_STATUS_LABELS, PHASE_TYPE_LABELS } from "../types";
+import {
+  EDITABLE_PHASE_STATUSES,
+  PHASE_STATUS_LABELS,
+  PHASE_TYPE_LABELS,
+} from "../types";
 
 interface PhaseFormProps {
   initial?: Phase | null;
@@ -97,6 +101,12 @@ export function PhaseForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // "Finalizada" solo se alcanza cerrando la fase, no desde este formulario.
+  const statusLocked = initial?.status === "finished";
+  const statusOptions: PhaseStatus[] = statusLocked
+    ? ["finished"]
+    : EDITABLE_PHASE_STATUSES;
+
   const clientErrors = validate(values);
   const visibleError = (field: keyof PhaseFormValues) =>
     touched[field] ? clientErrors[field] : undefined;
@@ -162,13 +172,23 @@ export function PhaseForm({
       </Field>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <Field label="Tipo" htmlFor="phase-type" error={visibleError("type")}>
+        <Field
+          label="Tipo"
+          htmlFor="phase-type"
+          error={visibleError("type")}
+          hint={
+            initial
+              ? "El tipo no se puede cambiar una vez creada la fase"
+              : undefined
+          }
+        >
           <select
             id="phase-type"
             value={values.type}
+            disabled={!!initial}
             onChange={(e) => setField("type", e.target.value as PhaseType)}
             onBlur={blur("type")}
-            className={inputClass(!!visibleError("type"))}
+            className={`${inputClass(!!visibleError("type"))} disabled:bg-slate-50 disabled:text-slate-500`}
           >
             {(Object.keys(PHASE_TYPE_LABELS) as PhaseType[]).map((t) => (
               <option key={t} value={t}>
@@ -182,15 +202,19 @@ export function PhaseForm({
           label="Estado"
           htmlFor="phase-status"
           error={visibleError("status")}
+          hint={
+            statusLocked ? "Se cambia cerrando o reabriendo la fase" : undefined
+          }
         >
           <select
             id="phase-status"
             value={values.status}
+            disabled={statusLocked}
             onChange={(e) => setField("status", e.target.value as PhaseStatus)}
             onBlur={blur("status")}
-            className={inputClass(!!visibleError("status"))}
+            className={`${inputClass(!!visibleError("status"))} disabled:bg-slate-50 disabled:text-slate-500`}
           >
-            {(Object.keys(PHASE_STATUS_LABELS) as PhaseStatus[]).map((s) => (
+            {statusOptions.map((s) => (
               <option key={s} value={s}>
                 {PHASE_STATUS_LABELS[s]}
               </option>

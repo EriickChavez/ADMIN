@@ -1,9 +1,16 @@
 import { api } from "../../../api/client";
 import type {
     Phase,
+    PhaseGroup,
+    PhaseGroupInput,
+    PhaseGroupResponse,
+    PhaseGroupsResponse,
     PhaseInput,
     PhaseResponse,
     PhasesResponse,
+    PhaseTeam,
+    PhaseTeamsResponse,
+    SyncPhaseTeamItem,
 } from "../types";
 
 function toBody(input: Partial<PhaseInput>) {
@@ -61,5 +68,50 @@ export const phasesService = {
 
     remove: async (id: string): Promise<void> => {
         await api.delete(`/phases/${id}`);
+    },
+
+    // ---- Grupos ----
+
+    listGroups: async (phaseId: string): Promise<PhaseGroup[]> => {
+        const { data } = await api.get<PhaseGroupsResponse>(
+            `/phases/${phaseId}/groups`,
+        );
+        return data.groups ?? [];
+    },
+
+    createGroup: async (
+        phaseId: string,
+        input: PhaseGroupInput,
+    ): Promise<PhaseGroup> => {
+        const { data } = await api.post<PhaseGroupResponse>(
+            `/phases/${phaseId}/groups`,
+            input,
+        );
+        return data.group;
+    },
+
+    removeGroup: async (id: string): Promise<void> => {
+        await api.delete(`/phase-groups/${id}`);
+    },
+
+    // ---- Equipos de la fase ----
+
+    listTeams: async (phaseId: string): Promise<PhaseTeam[]> => {
+        const { data } = await api.get<PhaseTeamsResponse>(
+            `/phases/${phaseId}/teams`,
+        );
+        return data.teams ?? [];
+    },
+
+    // Reemplaza la lista completa de equipos de la fase.
+    syncTeams: async (
+        phaseId: string,
+        teams: SyncPhaseTeamItem[],
+    ): Promise<PhaseTeam[]> => {
+        const { data } = await api.put<PhaseTeamsResponse>(
+            `/phases/${phaseId}/teams`,
+            { teams },
+        );
+        return data.teams ?? [];
     },
 };
