@@ -5,6 +5,7 @@ import {
   ProtectedRoute,
   RegisterPage,
 } from "./features/auth";
+import { PhaseBracketPage } from "./features/brackets";
 import {
   CategoriesPage,
   CategoryDetailPage,
@@ -13,6 +14,7 @@ import {
 import { HomePage } from "./features/home";
 import { MatchSheetPage } from "./features/match-events";
 import { CalendarsPage } from "./features/matches";
+import { MembersPage } from "./features/members";
 import {
   PhaseDetailPage,
   PhaseEditPage,
@@ -31,7 +33,6 @@ import {
 import { TeamDetailPage, TeamNewPage, TeamsPage } from "./features/teams";
 import { BrandingPage, TournamentPage } from "./features/tournaments";
 import { AppLayout } from "./app/layouts/AppLayout";
-import { PhaseBracketPage } from "./features/brackets/components/PhaseBracketPage";
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/calendar" element={<CalendarsPage />} />
           <Route path="/matches/:id" element={<MatchSheetPage />} />
           <Route path="/tournament/branding" element={<BrandingPage />} />
+          <Route path="/tournament/members" element={<MembersPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/categories/new" element={<CategoryNewPage />} />
           <Route path="/categories/:id" element={<CategoryDetailPage />} />

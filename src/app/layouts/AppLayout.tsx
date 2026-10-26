@@ -8,6 +8,7 @@ import {
   Menu,
   Plus,
   Settings,
+  UserCog,
   UserRound,
   Users,
 } from "lucide-react";
@@ -53,6 +54,11 @@ export function AppLayout() {
               to: "/tournament/branding",
               label: "Branding",
               icon: ImageIcon,
+            },
+            {
+              to: "/tournament/members",
+              label: "Miembros",
+              icon: UserCog,
             },
             {
               to: "/categories",
