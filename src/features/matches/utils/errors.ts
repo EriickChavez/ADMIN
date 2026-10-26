@@ -29,6 +29,18 @@ export function getMatchErrorMessage(error: unknown): string {
             return "Para iniciar, finalizar o reabrir un partido usa los botones de la cédula";
         case "MATCH_HAS_EVENTS":
             return "No se pueden cambiar los equipos ni la categoría de un partido que ya tiene eventos";
+        case "NOT_ASSIGNED_TO_MATCH":
+            return "No estás asignado como árbitro de este partido";
+        case "INVALID_REFEREE":
+            return "Todos los árbitros deben ser miembros del torneo con rol de administrador";
+        case "INVALID_SUBSTITUTION":
+            return "Un cambio necesita al jugador que sale y al que entra: distintos y del mismo equipo";
+        case "INVALID_OCCURRED_AT":
+            return "La hora del evento no puede estar en el futuro";
+        case "PLAYER_ALREADY_SENT_OFF":
+            return "Ese jugador ya fue expulsado en este partido";
+        case "DERIVED_MATCH_EVENT":
+            return "Esta roja se generó por doble amarilla: elimina la segunda amarilla";
         case "INVALID_PENALTIES":
             return "Penales inválidos: no pueden quedar empatados";
         case "BRACKET_ADVANCE_CONFLICT":

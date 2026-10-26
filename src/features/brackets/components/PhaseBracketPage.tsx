@@ -2,11 +2,12 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { ArrowLeft, GitBranch } from "lucide-react";
 import { Card } from "../../../shared/components/ui/Card";
 import { PageHeader } from "../../../shared/components/ui/PageHeader";
-import { usePhase } from "../../phases";
+import { ChampionshipClosurePanel } from "../../category-closures";
+import { PhaseWorkspaceNav, usePhase } from "../../phases";
 import { useAllTeams } from "../../teams";
 import { useMyTournament } from "../../tournaments";
 import { BracketPanel } from "../components/BracketPanel";
-import { PhaseWorkspaceNav } from "../../phases/components/PhaseWorkspaceNav";
+import { useBracket } from "../hooks";
 
 export function PhaseBracketPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +16,11 @@ export function PhaseBracketPage() {
   const teamsQuery = useAllTeams(phase?.tournamentId, {
     categoryId: phase?.categoryId,
   });
+  // Misma consulta que usa el panel: React Query la comparte, no se pide dos veces.
+  const { nodes } = useBracket(
+    phase?.tournamentId,
+    phase?.type === "knockout" ? phase.id : undefined,
+  );
 
   if (loadingTournament || isLoading || teamsQuery.isLoading) {
     return (
@@ -52,6 +58,17 @@ export function PhaseBracketPage() {
     return <Navigate to={`/phases/${phase.id}`} replace />;
   }
 
+  const teamNames = new Map(teamsQuery.teams.map((t) => [t.id, t.name]));
+  const teamName = (teamId: string) => teamNames.get(teamId) ?? "—";
+
+  // Campeón: ganador de la final del cuadro principal.
+  const finalNode = nodes
+    .filter((n) => n.stage === "main")
+    .sort((a, b) => b.round - a.round)[0];
+  const championName = finalNode?.winnerTeamId
+    ? teamName(finalNode.winnerTeamId)
+    : null;
+
   return (
     <div>
       <Link
@@ -68,6 +85,13 @@ export function PhaseBracketPage() {
       />
 
       <PhaseWorkspaceNav phase={phase} current="bracket" />
+
+      <ChampionshipClosurePanel
+        tournamentId={phase.tournamentId}
+        categoryId={phase.categoryId}
+        championName={championName}
+        teamName={teamName}
+      />
       <BracketPanel phase={phase} teams={teamsQuery.teams} />
     </div>
   );

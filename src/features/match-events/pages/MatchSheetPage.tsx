@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -31,9 +31,9 @@ import {
   useMatchEvents,
 } from "../hooks";
 import {
-  GOAL_EVENT_LABELS,
-  GOAL_EVENT_TYPES,
-  type GoalEventType,
+  EVENT_TYPES,
+  EVENT_TYPE_META,
+  type MatchEventInput,
   type MatchEventType,
 } from "../types";
 
@@ -54,10 +54,24 @@ const LIFECYCLE_MESSAGES = {
   reopen: "Cédula reabierta: ya puedes corregir los eventos.",
 } as const;
 
-const eventLabel = (type: MatchEventType) =>
-  GOAL_EVENT_LABELS[type as GoalEventType] ?? type;
-
 type Message = { ok: boolean; text: string };
+
+function EventBadge({ type }: { type: MatchEventType }) {
+  const meta = EVENT_TYPE_META[type] ?? EVENT_TYPE_META.otro;
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${meta.badge}`}
+    >
+      {type === "tarjeta_amarilla" && (
+        <span className="h-3 w-2 rounded-[2px] bg-amber-400" />
+      )}
+      {type === "tarjeta_roja" && (
+        <span className="h-3 w-2 rounded-[2px] bg-red-500" />
+      )}
+      {meta.label}
+    </span>
+  );
+}
 
 function MatchSheet({ match }: { match: Match }) {
   const tournamentId = match.tournamentId;
@@ -83,9 +97,12 @@ function MatchSheet({ match }: { match: Match }) {
   const deleteEvent = useDeleteMatchEvent(tournamentId, match.id);
 
   const [teamId, setTeamId] = useState(match.homeTeamId);
-  const [eventType, setEventType] = useState<GoalEventType>("gol");
+  const [eventType, setEventType] = useState<MatchEventType>("gol");
   const [playerId, setPlayerId] = useState("");
+  // Solo para cambios: el jugador que entra (playerId es el que sale).
+  const [substituteId, setSubstituteId] = useState("");
   const [minute, setMinute] = useState("");
+  const [description, setDescription] = useState("");
   const [homePen, setHomePen] = useState(
     match.homePenalties != null ? String(match.homePenalties) : "",
   );
@@ -94,10 +111,18 @@ function MatchSheet({ match }: { match: Match }) {
   );
   const [message, setMessage] = useState<Message | null>(null);
 
+  // Mismo clientEventId mientras se reintente el mismo evento; cambia si se edita el formulario.
+  const clientEventIdRef = useRef<string | null>(null);
+  const resetClientEventId = () => {
+    clientEventIdRef.current = null;
+  };
+
   const status = match.status;
   const isLive = status === "in_progress";
   const isFinished = status === "finished";
   const canStart = status === "scheduled" || status === "postponed";
+  const isSubstitution = eventType === "cambio";
+  const isOther = eventType === "otro";
   const isBusy =
     startMatch.isPending ||
     finishMatch.isPending ||
@@ -164,9 +189,21 @@ function MatchSheet({ match }: { match: Match }) {
     }
   }
 
-  async function handleAddGoal(e: FormEvent) {
+  async function handleAddEvent(e: FormEvent) {
     e.preventDefault();
     setMessage(null);
+
+    if (isSubstitution && (!playerId || !substituteId)) {
+      setMessage({
+        ok: false,
+        text: "Selecciona el jugador que sale y el que entra.",
+      });
+      return;
+    }
+    if (isOther && description.trim() === "") {
+      setMessage({ ok: false, text: "Describe brevemente el evento." });
+      return;
+    }
 
     const parsedMinute =
       minute.trim() === "" ? undefined : Number.parseInt(minute, 10);
@@ -178,15 +215,27 @@ function MatchSheet({ match }: { match: Match }) {
       return;
     }
 
+    if (!clientEventIdRef.current) {
+      clientEventIdRef.current = crypto.randomUUID();
+    }
+
+    const payload: MatchEventInput = {
+      eventType,
+      teamId,
+      clientEventId: clientEventIdRef.current,
+      ...(playerId ? { playerId } : {}),
+      ...(isSubstitution ? { substitutePlayerId: substituteId } : {}),
+      ...(parsedMinute !== undefined ? { minute: parsedMinute } : {}),
+      ...(isOther ? { description: description.trim() } : {}),
+    };
+
     try {
-      await createEvent.mutateAsync({
-        eventType,
-        teamId,
-        ...(playerId ? { playerId } : {}),
-        ...(parsedMinute !== undefined ? { minute: parsedMinute } : {}),
-      });
+      await createEvent.mutateAsync(payload);
+      resetClientEventId();
       setPlayerId("");
+      setSubstituteId("");
       setMinute("");
+      setDescription("");
     } catch (err) {
       setMessage({ ok: false, text: getMatchErrorMessage(err) });
     }
@@ -234,6 +283,8 @@ function MatchSheet({ match }: { match: Match }) {
       setMessage({ ok: false, text: getMatchErrorMessage(err) });
     }
   }
+
+  const sideLabel = teamId === match.homeTeamId ? "Local" : "Visitante";
 
   return (
     <div>
@@ -312,7 +363,7 @@ function MatchSheet({ match }: { match: Match }) {
           )}
           <p className="text-xs text-slate-500">
             {canStart && "Inicia el partido para abrir la cédula."}
-            {isLive && "Cédula abierta: registra los goles del partido."}
+            {isLive && "Cédula abierta: registra los eventos del partido."}
             {isFinished && "Cédula cerrada. Reábrela para corregir eventos."}
           </p>
         </div>
@@ -334,7 +385,9 @@ function MatchSheet({ match }: { match: Match }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="min-w-0 lg:col-span-2">
           <Card className="p-5 sm:p-6">
-            <h2 className="text-base font-semibold text-slate-900">Eventos</h2>
+            <h2 className="text-base font-semibold text-slate-900">
+              Eventos ({events.length})
+            </h2>
 
             {eventsQuery.isLoading ? (
               <div className="mt-4 h-24 animate-pulse rounded-lg bg-slate-100" />
@@ -344,14 +397,22 @@ function MatchSheet({ match }: { match: Match }) {
                 title="Sin eventos"
                 description={
                   isLive
-                    ? "Registra el primer gol con el formulario."
-                    : "Cuando el partido esté en curso podrás registrar los goles."
+                    ? "Registra el primer evento con el formulario."
+                    : "Cuando el partido esté en curso podrás registrar goles, tarjetas y cambios."
                 }
               />
             ) : (
               <ul className="mt-4 divide-y divide-slate-100 rounded-lg border border-slate-200">
                 {events.map((event) => {
                   const isHome = event.teamId === match.homeTeamId;
+                  const isDerived = Boolean(event.derivedFromEventId);
+                  const player = event.playerId
+                    ? playerLabel.get(event.playerId)
+                    : null;
+                  const substitute = event.substitutePlayerId
+                    ? playerLabel.get(event.substitutePlayerId)
+                    : null;
+
                   return (
                     <li
                       key={event.id}
@@ -360,26 +421,38 @@ function MatchSheet({ match }: { match: Match }) {
                       <span className="w-10 shrink-0 text-sm font-semibold tabular-nums text-slate-500">
                         {event.minute != null ? `${event.minute}'` : "—"}
                       </span>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <EventBadge type={event.eventType} />
                         <p className="truncate text-sm font-medium text-slate-900">
-                          {eventLabel(event.eventType)}
-                          {event.playerId
-                            ? ` · ${playerLabel.get(event.playerId) ?? "Jugador"}`
-                            : ""}
+                          {event.eventType === "cambio"
+                            ? `Sale: ${player ?? "—"}`
+                            : event.eventType === "otro"
+                              ? (event.description ?? "Sin descripción")
+                              : (player ?? "Jugador sin asignar")}
                         </p>
+                        {event.eventType === "cambio" && (
+                          <p className="truncate text-xs text-slate-600">
+                            Entra: {substitute ?? "—"}
+                          </p>
+                        )}
                         <p className="truncate text-xs text-slate-500">
                           {isHome ? homeName : awayName} (
                           {isHome ? "Local" : "Visitante"})
+                          {isDerived && event.description
+                            ? ` · ${event.description}`
+                            : ""}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleDeleteEvent(event.id)}
-                        disabled={!isLive || deleteEvent.isPending}
+                        disabled={!isLive || isDerived || deleteEvent.isPending}
                         title={
-                          isLive
-                            ? "Eliminar evento"
-                            : "Reabre la cédula para borrar"
+                          isDerived
+                            ? "Se elimina al borrar la segunda amarilla"
+                            : isLive
+                              ? "Eliminar evento"
+                              : "Reabre la cédula para borrar"
                         }
                         aria-label="Eliminar evento"
                         className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-400"
@@ -397,10 +470,10 @@ function MatchSheet({ match }: { match: Match }) {
         <aside className="order-first min-w-0 space-y-6 lg:order-none">
           <Card className="p-5">
             <h2 className="text-base font-semibold text-slate-900">
-              Registrar gol
+              Registrar evento
             </h2>
 
-            <form onSubmit={handleAddGoal} className="mt-4">
+            <form onSubmit={handleAddEvent} className="mt-4">
               <fieldset
                 disabled={!isLive}
                 className="space-y-4 disabled:opacity-50"
@@ -417,6 +490,8 @@ function MatchSheet({ match }: { match: Match }) {
                       onClick={() => {
                         setTeamId(team.id);
                         setPlayerId("");
+                        setSubstituteId("");
+                        resetClientEventId();
                       }}
                       className={`truncate rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                         teamId === team.id
@@ -439,14 +514,17 @@ function MatchSheet({ match }: { match: Match }) {
                   <select
                     id="event-type"
                     value={eventType}
-                    onChange={(e) =>
-                      setEventType(e.target.value as GoalEventType)
-                    }
+                    onChange={(e) => {
+                      setEventType(e.target.value as MatchEventType);
+                      setSubstituteId("");
+                      setDescription("");
+                      resetClientEventId();
+                    }}
                     className={inputClass}
                   >
-                    {GOAL_EVENT_TYPES.map((type) => (
+                    {EVENT_TYPES.map((type) => (
                       <option key={type} value={type}>
-                        {GOAL_EVENT_LABELS[type]}
+                        {EVENT_TYPE_META[type].label}
                       </option>
                     ))}
                   </select>
@@ -457,19 +535,29 @@ function MatchSheet({ match }: { match: Match }) {
                     htmlFor="event-player"
                     className="mb-1.5 block text-sm font-medium text-slate-700"
                   >
-                    Jugador{" "}
-                    <span className="font-normal text-slate-400">
-                      (opcional)
-                    </span>
+                    {isSubstitution ? "Sale" : "Jugador"} ({sideLabel}){" "}
+                    {!isSubstitution && (
+                      <span className="font-normal text-slate-400">
+                        (opcional)
+                      </span>
+                    )}
                   </label>
                   <select
                     id="event-player"
                     value={playerId}
-                    onChange={(e) => setPlayerId(e.target.value)}
+                    onChange={(e) => {
+                      setPlayerId(e.target.value);
+                      if (e.target.value === substituteId) setSubstituteId("");
+                      resetClientEventId();
+                    }}
                     className={inputClass}
                   >
                     <option value="">
-                      {loadingPlayers ? "Cargando jugadores…" : "Sin jugador"}
+                      {loadingPlayers
+                        ? "Cargando jugadores…"
+                        : isSubstitution
+                          ? "Selecciona quién sale"
+                          : "Sin jugador"}
                     </option>
                     {teamPlayers.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -483,6 +571,58 @@ function MatchSheet({ match }: { match: Match }) {
                     </p>
                   )}
                 </div>
+
+                {isSubstitution && (
+                  <div>
+                    <label
+                      htmlFor="event-substitute"
+                      className="mb-1.5 block text-sm font-medium text-slate-700"
+                    >
+                      Entra ({sideLabel})
+                    </label>
+                    <select
+                      id="event-substitute"
+                      value={substituteId}
+                      onChange={(e) => {
+                        setSubstituteId(e.target.value);
+                        resetClientEventId();
+                      }}
+                      className={inputClass}
+                    >
+                      <option value="">Selecciona quién entra</option>
+                      {teamPlayers
+                        .filter((p) => p.id !== playerId)
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {playerLabel.get(p.id)}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+
+                {isOther && (
+                  <div>
+                    <label
+                      htmlFor="event-description"
+                      className="mb-1.5 block text-sm font-medium text-slate-700"
+                    >
+                      Descripción
+                    </label>
+                    <input
+                      id="event-description"
+                      type="text"
+                      maxLength={200}
+                      value={description}
+                      onChange={(e) => {
+                        setDescription(e.target.value);
+                        resetClientEventId();
+                      }}
+                      placeholder="Ej. Lesión, reclamo, pausa"
+                      className={inputClass}
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label
@@ -498,8 +638,12 @@ function MatchSheet({ match }: { match: Match }) {
                     id="event-minute"
                     type="number"
                     min={0}
+                    max={150}
                     value={minute}
-                    onChange={(e) => setMinute(e.target.value)}
+                    onChange={(e) => {
+                      setMinute(e.target.value);
+                      resetClientEventId();
+                    }}
                     className={inputClass}
                   />
                 </div>
@@ -508,6 +652,18 @@ function MatchSheet({ match }: { match: Match }) {
                   <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
                     El autogol suma al rival: elige el equipo del jugador que lo
                     cometió.
+                  </p>
+                )}
+                {eventType === "tarjeta_amarilla" && (
+                  <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    La segunda amarilla del mismo jugador genera la roja
+                    automáticamente.
+                  </p>
+                )}
+                {isSubstitution && (
+                  <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    Un cambio necesita al jugador que sale y al que entra,
+                    distintos y del mismo equipo.
                   </p>
                 )}
 
