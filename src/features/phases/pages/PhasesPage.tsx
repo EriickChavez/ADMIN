@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   CircleDashed,
   Clock3,
+  Copy,
   GitBranch,
   Plus,
   Search,
@@ -13,11 +14,18 @@ import {
   Users,
 } from "lucide-react";
 import { PageHeader } from "../../../shared/components/ui/PageHeader";
-import { ButtonLink } from "../../../shared/components/ui/Button";
+import { Button, ButtonLink } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
+import { ConfirmBox } from "../../../shared/components/ui/ConfirmBox";
 import { EmptyState } from "../../../shared/components/ui/EmptyState";
+import { useCategoryClosures } from "../../category-closures";
 import { useCategories } from "../../categories";
 import { useMyTournament } from "../../tournaments";
+import {
+  EmptySourceError,
+  useApplyPhaseFormat,
+  type ApplyPhaseFormatResult,
+} from "../apply-format";
 import { usePhases } from "../hooks";
 import {
   PHASE_STATUS_LABELS,
@@ -26,6 +34,7 @@ import {
   type PhaseStatus,
   type PhaseType,
 } from "../types";
+import { getPhaseErrorMessage } from "../utils/errors";
 
 const statusStyles: Record<PhaseStatus, string> = {
   upcoming: "bg-sky-50 text-sky-700 ring-sky-600/15",
@@ -84,12 +93,18 @@ export function PhasesPage() {
   const { categories, isLoading: loadingCategories } = useCategories(
     tournament?.id,
   );
+  const { closures } = useCategoryClosures(tournament?.id);
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedCategoryId = searchParams.get("categoryId") ?? "";
   const [categoryId, setCategoryId] = useState(requestedCategoryId);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | PhaseStatus>("all");
   const [typeFilter, setTypeFilter] = useState<"all" | PhaseType>("all");
+  const [confirmingApply, setConfirmingApply] = useState(false);
+  const [applyResult, setApplyResult] = useState<ApplyPhaseFormatResult | null>(
+    null,
+  );
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!categories.length) return;
@@ -116,12 +131,17 @@ export function PhasesPage() {
   function handleCategoryChange(nextCategoryId: string) {
     setCategoryId(nextCategoryId);
     setSearchParams({ categoryId: nextCategoryId });
+    setApplyResult(null);
+    setApplyError(null);
+    setConfirmingApply(false);
   }
 
   const { phases, isLoading, isError } = usePhases(
     tournament?.id,
     categoryId || undefined,
   );
+  const applyFormat = useApplyPhaseFormat(tournament?.id ?? "", categoryId);
+
   const filteredPhases = useMemo(
     () =>
       phases.filter((phase) => {
@@ -201,18 +221,128 @@ export function PhasesPage() {
     (phase) => phase.status === "finished",
   ).length;
 
+  // Con el campeonato cerrado el backend rechaza fases nuevas: aquí solo se avisa.
+  const isClosed = closures.some(
+    (closure) => closure.categoryId === categoryId,
+  );
+  const categoryName = (id: string) =>
+    categories.find((category) => category.id === id)?.title ?? "Categoría";
+
+  function runApply() {
+    setConfirmingApply(false);
+    setApplyResult(null);
+    setApplyError(null);
+    applyFormat.mutate(
+      {
+        categories,
+        closedCategoryIds: closures.map((closure) => closure.categoryId),
+      },
+      {
+        onSuccess: setApplyResult,
+        onError: (err) =>
+          setApplyError(
+            err instanceof EmptySourceError
+              ? "Esta categoría no tiene fases que copiar."
+              : getPhaseErrorMessage(err),
+          ),
+      },
+    );
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Fases de competencia"
         description="Administra la estructura, los equipos y el calendario de cada etapa."
         actions={
-          <ButtonLink to={`/phases/new?categoryId=${categoryId}`}>
-            <Plus size={16} />
-            Nueva fase
-          </ButtonLink>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmingApply(true)}
+              disabled={
+                applyFormat.isPending ||
+                phases.length === 0 ||
+                categories.length < 2
+              }
+              title="Copia estas fases y sus grupos a las demás categorías"
+            >
+              <Copy size={16} />
+              {applyFormat.isPending
+                ? "Aplicando…"
+                : "Aplicar a otras categorías"}
+            </Button>
+            {isClosed ? (
+              <Button type="button" disabled title="Campeonato cerrado">
+                <Plus size={16} />
+                Nueva fase
+              </Button>
+            ) : (
+              <ButtonLink to={`/phases/new?categoryId=${categoryId}`}>
+                <Plus size={16} />
+                Nueva fase
+              </ButtonLink>
+            )}
+          </div>
         }
       />
+
+      {isClosed && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          El campeonato de esta categoría está cerrado: no se pueden crear fases
+          nuevas. Reábrelo desde la pestaña Llave de su fase de eliminación.
+        </p>
+      )}
+
+      {confirmingApply && (
+        <ConfirmBox
+          message={`Se copiarán las ${phases.length} fases de ${categoryName(categoryId)} (con sus grupos, sin equipos) a las categorías que aún no tengan fases.\n\nLas que ya tienen fases o tienen el campeonato cerrado se omiten.`}
+          confirmLabel="Sí, aplicar"
+          onConfirm={runApply}
+          onCancel={() => setConfirmingApply(false)}
+        />
+      )}
+
+      {applyError && (
+        <p
+          role="alert"
+          className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {applyError}
+        </p>
+      )}
+
+      {applyResult && (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+        >
+          <p className="font-semibold">
+            Formato aplicado a {applyResult.appliedTo.length}{" "}
+            {applyResult.appliedTo.length === 1 ? "categoría" : "categorías"}
+          </p>
+          <p className="mt-0.5 text-xs text-emerald-800">
+            {applyResult.createdPhases} fases y {applyResult.createdGroups}{" "}
+            grupos creados.
+          </p>
+          {applyResult.skipped.length > 0 && (
+            <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-emerald-800">
+              {applyResult.skipped.map((item) => (
+                <li key={item.categoryId}>
+                  {categoryName(item.categoryId)}: {item.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            onClick={() => setApplyResult(null)}
+            className="mt-2 text-xs font-semibold text-emerald-700 hover:text-emerald-900"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
 
       <Card className="overflow-hidden border-0 bg-slate-900 text-white shadow-sm">
         <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
@@ -345,10 +475,12 @@ export function PhasesPage() {
               title="Todavía no hay fases"
               description="Crea la primera etapa y define si será fase de grupos, liga o eliminación directa."
               action={
-                <ButtonLink to={`/phases/new?categoryId=${categoryId}`}>
-                  <Plus size={16} />
-                  Crear primera fase
-                </ButtonLink>
+                isClosed ? undefined : (
+                  <ButtonLink to={`/phases/new?categoryId=${categoryId}`}>
+                    <Plus size={16} />
+                    Crear primera fase
+                  </ButtonLink>
+                )
               }
             />
           </Card>

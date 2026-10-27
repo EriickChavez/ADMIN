@@ -14,19 +14,8 @@ export interface TournamentSponsor {
     updatedAt: string;
 }
 
-export interface CreateSponsorPayload {
-    name: string;
-    description: string;
-    logo?: File | null;
-    logoUrl?: string;
-    websiteUrl?: string;
-    pdf?: File | null;
-    pdfUrl?: string;
-    order?: number;
-    isActive?: boolean;
-}
-
-export interface UpdateSponsorPayload {
+/** Sirve para crear (name, description y logo son obligatorios) y para editar (todo opcional). */
+export interface SponsorInput {
     name?: string;
     description?: string;
     logo?: File | null;

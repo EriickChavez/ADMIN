@@ -6,6 +6,7 @@ import { Button, ButtonLink } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { EmptyState } from "../../../shared/components/ui/EmptyState";
 import { useCategories } from "../../categories";
+import { RosterLockNotice } from "../../competition-state";
 import { useTeams } from "../../teams";
 import { useMyTournament } from "../../tournaments";
 import { usePlayers } from "../hooks";
@@ -136,6 +137,8 @@ export function PlayersPage() {
           Nuevo jugador
         </ButtonLink>
       </div>
+
+      <RosterLockNotice tournamentId={tournament.id} categories={categories} />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <select

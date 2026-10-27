@@ -1,10 +1,14 @@
 export {
     useAllMatches,
+    useCreateMatch,
     useCreateMatches,
+    useDeleteMatch,
     useFinishMatch,
     useMatch,
+    useMatchReferees,
     useMatches,
     useReopenMatch,
+    useSetMatchReferees,
     useStartMatch,
     useUpdateMatch,
 } from "./hooks";
@@ -26,3 +30,5 @@ export type {
 } from "./types";
 
 export { CalendarsPage } from "./pages/CalendarsPage";
+export { MatchNewPage } from "./pages/MatchNewPage";
+export { MatchRefereesPage } from "./pages/MatchRefereesPage";

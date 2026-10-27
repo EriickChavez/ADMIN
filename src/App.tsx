@@ -13,7 +13,11 @@ import {
 } from "./features/categories";
 import { HomePage } from "./features/home";
 import { MatchSheetPage } from "./features/match-events";
-import { CalendarsPage } from "./features/matches";
+import {
+  CalendarsPage,
+  MatchNewPage,
+  MatchRefereesPage,
+} from "./features/matches";
 import { MembersPage } from "./features/members";
 import {
   PhaseDetailPage,
@@ -30,11 +34,11 @@ import {
   PlayerNewPage,
   PlayersPage,
 } from "./features/players";
+import { SponsorsPage } from "./features/sponsors";
 import { TeamDetailPage, TeamNewPage, TeamsPage } from "./features/teams";
 import { BrandingPage, TournamentPage } from "./features/tournaments";
-import { SponsorsSection } from "./features/sponsors";
 import { AppLayout } from "./app/layouts/AppLayout";
-import IdentityPage from "./features/identity/IdentityPage";
+import IdentityPage from "./features/identity";
 
 export default function App() {
   return (
@@ -49,7 +53,9 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/tournament" element={<TournamentPage />} />
           <Route path="/calendar" element={<CalendarsPage />} />
+          <Route path="/matches/new" element={<MatchNewPage />} />
           <Route path="/matches/:id" element={<MatchSheetPage />} />
+          <Route path="/matches/:id/referees" element={<MatchRefereesPage />} />
           <Route path="/tournament/branding" element={<BrandingPage />} />
           <Route path="/tournament/members" element={<MembersPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
@@ -76,7 +82,7 @@ export default function App() {
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/new" element={<PlayerNewPage />} />
           <Route path="/players/:id" element={<PlayerDetailPage />} />
-          <Route path="/sponsors" element={<SponsorsSection />} />
+          <Route path="/sponsors" element={<SponsorsPage />} />
           <Route path="/identity" element={<IdentityPage />} />
           <Route
             path="/tournament/sponsors"

@@ -7,6 +7,7 @@ import { Pagination } from "../../../shared/components/Pagination";
 import { Card } from "../../../shared/components/ui/Card";
 import { EmptyState } from "../../../shared/components/ui/EmptyState";
 import { useCategories } from "../../categories";
+import { RosterLockNotice } from "../../competition-state";
 import { useMyTournament } from "../../tournaments";
 import { useTeams } from "../hooks";
 
@@ -118,6 +119,8 @@ export function TeamsPage() {
           Nuevo equipo
         </ButtonLink>
       </div>
+
+      <RosterLockNotice tournamentId={tournament.id} categories={categories} />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <label

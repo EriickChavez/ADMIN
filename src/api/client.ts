@@ -2,6 +2,8 @@ import axios, { AxiosError } from "axios";
 import type { ApiErrorBody } from "./types";
 
 export const API_URL = import.meta.env.VITE_API_URL as string;
+export const BRANDING_URL = import.meta.env.VITE_BRANDING_URL as string;
+export const SPONSOR_URL = import.meta.env.VITE_SPONSOR_URL as string;
 
 if (!API_URL) {
   console.error(

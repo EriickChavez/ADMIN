@@ -114,6 +114,27 @@ export function useCreateMatches(tournamentId: string) {
     });
 }
 
+/** Crea un partido suelto (fuera de una fase). */
+export function useCreateMatch(tournamentId: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (input: MatchInput) => matchesService.create(tournamentId, input),
+        onSuccess: () =>
+            qc.invalidateQueries({ queryKey: ["matches", tournamentId] }),
+    });
+}
+
+export function useDeleteMatch(tournamentId: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (matchId: string) => matchesService.remove(matchId),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["matches", tournamentId] });
+            qc.invalidateQueries({ queryKey: ["phase"] });
+        },
+    });
+}
+
 export function useUpdateMatch(tournamentId: string) {
     const qc = useQueryClient();
     return useMutation({
@@ -134,7 +155,7 @@ function useMatchLifecycle(tournamentId: string, action: LifecycleAction) {
     return useMutation({
         mutationFn: (matchId: string) => matchesService[action](matchId),
         onSuccess: (_match, matchId) => {
-            // Esta clave también cubre posiciones y llaves: cuelgan de ella a propósito.
+            // Esta clave también cubre posiciones, llaves y estado de la competencia.
             qc.invalidateQueries({ queryKey: ["matches", tournamentId] });
             qc.invalidateQueries({ queryKey: ["match", matchId] });
         },
@@ -149,3 +170,32 @@ export const useFinishMatch = (tournamentId: string) =>
 
 export const useReopenMatch = (tournamentId: string) =>
     useMatchLifecycle(tournamentId, "reopen");
+
+// ---- Árbitros ----
+
+const refereesKey = (matchId?: string) => ["match-referees", matchId] as const;
+
+export function useMatchReferees(matchId?: string) {
+    const query = useQuery({
+        queryKey: refereesKey(matchId),
+        queryFn: () => matchesService.getReferees(matchId!),
+        enabled: !!matchId,
+        staleTime: 30_000,
+    });
+
+    return {
+        refereeUserIds: query.data ?? [],
+        isLoading: query.isLoading,
+        error: query.error,
+    };
+}
+
+export function useSetMatchReferees(matchId: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (userIds: string[]) =>
+            matchesService.setReferees(matchId, userIds),
+        // La respuesta trae el conjunto final: se guarda directo, sin volver a pedirlo.
+        onSuccess: (userIds) => qc.setQueryData(refereesKey(matchId), userIds),
+    });
+}

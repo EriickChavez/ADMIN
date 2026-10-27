@@ -14,11 +14,11 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useMyTournament } from "../tournaments";
-import { useSponsors } from "../sponsors";
 import { resolveBrandingAsset } from "../../shared/utils/branding-assets";
 import { ButtonLink } from "../../shared/components/ui/Button";
 import { Card } from "../../shared/components/ui/Card";
 import { PageHeader } from "../../shared/components/ui/PageHeader";
+import { useSponsors } from "../sponsors/hooks";
 
 function resolveSponsorLogoSrc(logoUrl: string): string {
   if (!logoUrl) return "";
@@ -43,7 +43,7 @@ const getInitials = (name: string) =>
 
 export function IdentityPage() {
   const { tournament, isLoading: loadingTournament } = useMyTournament();
-  const { data: sponsorsData, isLoading: loadingSponsors } = useSponsors(
+  const { sponsors: sponsorsData, isLoading: loadingSponsors } = useSponsors(
     tournament?.id,
   );
 
@@ -72,7 +72,7 @@ export function IdentityPage() {
   }
 
   const branding = tournament.branding;
-  const sponsors = sponsorsData?.sponsors ?? [];
+  const sponsors = sponsorsData ?? [];
   const maxSponsors = tournament.maxSponsors ?? 10;
   const activeSponsors = sponsors.filter((s) => s.isActive);
   const availableSlots = Math.max(maxSponsors - sponsors.length, 0);
@@ -230,7 +230,9 @@ export function IdentityPage() {
               to="/sponsors"
               className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
             >
-              {sponsors.length === 0 ? "+ Añadir sponsor" : "Ver todos los sponsors"}
+              {sponsors.length === 0
+                ? "+ Añadir sponsor"
+                : "Ver todos los sponsors"}
               <ArrowRight size={12} />
             </Link>
           </div>
@@ -252,7 +254,8 @@ export function IdentityPage() {
                     Branding Oficial
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Escudo y banner de portada que definen la estética de tu torneo.
+                    Escudo y banner de portada que definen la estética de tu
+                    torneo.
                   </p>
                 </div>
               </div>
@@ -397,7 +400,9 @@ export function IdentityPage() {
             <div className="mt-5 space-y-3">
               {loadingSponsors ? (
                 <div className="flex h-44 items-center justify-center rounded-xl border border-dashed border-slate-200">
-                  <p className="text-xs text-slate-400">Cargando patrocinadores...</p>
+                  <p className="text-xs text-slate-400">
+                    Cargando patrocinadores...
+                  </p>
                 </div>
               ) : sponsors.length === 0 ? (
                 /* Empty state when no sponsors */
@@ -409,9 +414,13 @@ export function IdentityPage() {
                     Aún no tienes sponsors registrados
                   </p>
                   <p className="mt-1 max-w-xs text-[11px] text-slate-500">
-                    Agrega patrocinadores con sus logos y enlaces para mostrarlos en el portal público del torneo.
+                    Agrega patrocinadores con sus logos y enlaces para
+                    mostrarlos en el portal público del torneo.
                   </p>
-                  <ButtonLink to="/sponsors" className="mt-4 text-xs py-1.5 px-3">
+                  <ButtonLink
+                    to="/sponsors"
+                    className="mt-4 text-xs py-1.5 px-3"
+                  >
                     <Plus size={14} />
                     Añadir primer sponsor
                   </ButtonLink>
@@ -433,8 +442,9 @@ export function IdentityPage() {
                               alt={sponsor.name}
                               className="h-full w-full object-contain"
                               onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).style.display =
-                                  "none";
+                                (
+                                  e.currentTarget as HTMLImageElement
+                                ).style.display = "none";
                               }}
                             />
                           </div>
@@ -478,7 +488,10 @@ export function IdentityPage() {
                                 >
                                   <Globe size={11} className="text-slate-400" />
                                   Sitio web
-                                  <ExternalLink size={9} className="text-slate-400" />
+                                  <ExternalLink
+                                    size={9}
+                                    className="text-slate-400"
+                                  />
                                 </a>
                               )}
                               {sponsor.pdfUrl && (
@@ -523,7 +536,8 @@ export function IdentityPage() {
                   {/* Meta summary bar */}
                   <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
                     <span>
-                      {activeSponsors.length} de {sponsors.length} activo{sponsors.length === 1 ? "" : "s"}
+                      {activeSponsors.length} de {sponsors.length} activo
+                      {sponsors.length === 1 ? "" : "s"}
                     </span>
                     <span>
                       {availableSlots === 0
@@ -566,7 +580,8 @@ export function IdentityPage() {
             </span>
           </div>
           <p className="mt-0.5 text-xs text-slate-500">
-            Así se combinan tu banner, escudo y patrocinadores oficiales en la vista del torneo.
+            Así se combinan tu banner, escudo y patrocinadores oficiales en la
+            vista del torneo.
           </p>
         </div>
 
@@ -616,8 +631,8 @@ export function IdentityPage() {
 
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
-                    <Trophy size={14} className="text-amber-500" />
-                    /{tournament.slug}
+                    <Trophy size={14} className="text-amber-500" />/
+                    {tournament.slug}
                   </span>
                 </div>
               </div>
@@ -639,7 +654,8 @@ export function IdentityPage() {
                 {activeSponsors.length === 0 ? (
                   <div className="flex items-center justify-center rounded-xl bg-slate-50 py-4 text-center">
                     <p className="text-xs text-slate-400">
-                      Los logos de tus patrocinadores oficiales se exhibirán en esta franja.
+                      Los logos de tus patrocinadores oficiales se exhibirán en
+                      esta franja.
                     </p>
                   </div>
                 ) : (
@@ -655,8 +671,9 @@ export function IdentityPage() {
                           alt={sponsor.name}
                           className="h-5 w-5 object-contain"
                           onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.display =
-                              "none";
+                            (
+                              e.currentTarget as HTMLImageElement
+                            ).style.display = "none";
                           }}
                         />
                         <span className="text-xs font-medium text-slate-700">

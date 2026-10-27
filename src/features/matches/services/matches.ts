@@ -99,6 +99,10 @@ export const matchesService = {
         return data.match;
     },
 
+    remove: async (matchId: string): Promise<void> => {
+        await api.delete(`/matches/${matchId}`);
+    },
+
     /** Abre la cédula: scheduled o postponed → in_progress. */
     start: (matchId: string) => lifecycle(matchId, "start"),
 
@@ -107,4 +111,21 @@ export const matchesService = {
 
     /** Reabre la cédula: finished → in_progress. */
     reopen: (matchId: string) => lifecycle(matchId, "reopen"),
+
+    /** Árbitros asignados al partido (ids de usuario). Cualquier miembro puede verlos. */
+    getReferees: async (matchId: string): Promise<string[]> => {
+        const { data } = await api.get<{ refereeUserIds: string[] }>(
+            `/matches/${matchId}/referees`,
+        );
+        return data.refereeUserIds ?? [];
+    },
+
+    /** Reemplaza el conjunto completo de árbitros. Solo el dueño. [] deja el partido sin asignar. */
+    setReferees: async (matchId: string, userIds: string[]): Promise<string[]> => {
+        const { data } = await api.put<{ refereeUserIds: string[] }>(
+            `/matches/${matchId}/referees`,
+            { userIds },
+        );
+        return data.refereeUserIds ?? [];
+    },
 };
