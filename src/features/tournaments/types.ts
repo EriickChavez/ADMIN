@@ -16,6 +16,7 @@ export interface Tournament {
   timezone: string;
   roleId: string;
   branding: TournamentBranding | null;
+  maxSponsors?: number;
 }
 
 export interface MyTournamentsResponse {

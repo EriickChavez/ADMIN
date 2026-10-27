@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Outlet } from "react-router-dom";
 import {
   CalendarDays,
+  Handshake,
   Home,
   ImageIcon,
   Layers,
@@ -26,7 +27,6 @@ export function AppLayout() {
   const { categories, isLoading: loadingCategories } = useCategories(
     tournament?.id,
   );
-
   const [open, setOpen] = useState(false);
   const closeSidebar = useCallback(() => setOpen(false), []);
 
@@ -51,14 +51,26 @@ export function AppLayout() {
               icon: Settings,
             },
             {
-              to: "/tournament/branding",
-              label: "Branding",
-              icon: ImageIcon,
-            },
-            {
               to: "/tournament/members",
               label: "Miembros",
               icon: UserCog,
+            },
+            {
+              to: "/identity",
+              label: "Identidad",
+              icon: ImageIcon,
+              children: [
+                {
+                  to: "/tournament/branding",
+                  label: "Branding",
+                  icon: ImageIcon,
+                },
+                {
+                  to: "/sponsors",
+                  label: "Sponsors",
+                  icon: Handshake,
+                },
+              ],
             },
             {
               to: "/categories",

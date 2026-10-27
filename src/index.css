@@ -3,6 +3,7 @@
 
 @theme {
   --font-sans: "Montserrat Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #2563eb;
 }
 
 body {

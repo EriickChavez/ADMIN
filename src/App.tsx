@@ -32,7 +32,9 @@ import {
 } from "./features/players";
 import { TeamDetailPage, TeamNewPage, TeamsPage } from "./features/teams";
 import { BrandingPage, TournamentPage } from "./features/tournaments";
+import { SponsorsSection } from "./features/sponsors";
 import { AppLayout } from "./app/layouts/AppLayout";
+import IdentityPage from "./features/identity/IdentityPage";
 
 export default function App() {
   return (
@@ -74,6 +76,12 @@ export default function App() {
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/new" element={<PlayerNewPage />} />
           <Route path="/players/:id" element={<PlayerDetailPage />} />
+          <Route path="/sponsors" element={<SponsorsSection />} />
+          <Route path="/identity" element={<IdentityPage />} />
+          <Route
+            path="/tournament/sponsors"
+            element={<Navigate to="/sponsors" replace />}
+          />
         </Route>
       </Route>
 
