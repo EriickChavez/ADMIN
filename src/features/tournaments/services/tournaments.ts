@@ -17,4 +17,8 @@ export const tournamentsService = {
 
   update: async (id: string, input: TournamentInput) =>
     (await api.patch<TournamentResponse>(`/tournaments/${id}`, input)).data.tournament,
+
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`/tournaments/${id}`);
+  },
 };

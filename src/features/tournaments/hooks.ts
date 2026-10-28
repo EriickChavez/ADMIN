@@ -34,6 +34,19 @@ export function useUpdateTournament() {
   });
 }
 
+export function useDeleteTournament() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => tournamentsService.remove(id),
+    onSuccess: () => {
+      // Sin torneo, todo lo demás (categorías, equipos, partidos…) deja de aplicar:
+      // la pantalla pasa al modo "Crea tu torneo" al instante, sin esperar el refetch.
+      qc.setQueryData(MINE_KEY, []);
+      return qc.invalidateQueries({ queryKey: MINE_KEY });
+    },
+  });
+}
+
 export function useBranding(tournamentId?: string) {
   return useQuery({
     queryKey: ["branding", tournamentId],

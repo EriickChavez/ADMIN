@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle2, Trash2, UserRound } from "lucide-react";
+import { ApiError } from "../../../api/client";
 import { PageHeader } from "../../../shared/components/ui/PageHeader";
 import { Button } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { useCategories } from "../../categories";
+import { RosterLockNotice, useCategoryLocks } from "../../competition-state";
 import { useTeams } from "../../teams";
 import { useMyTournament } from "../../tournaments";
 import { PlayerForm } from "../components/PlayerForm";
@@ -20,7 +22,12 @@ export function PlayerDetailPage() {
   const { teams, isLoading: loadingTeams } = useTeams(tournament?.id, {
     limit: 100,
   });
-  const { player, isLoading, isError: isPlayerError } = usePlayer(tournament?.id, id);
+  const { isOpen } = useCategoryLocks(tournament?.id);
+  const {
+    player,
+    isLoading,
+    isError: isPlayerError,
+  } = usePlayer(tournament?.id, id);
   const updatePlayer = useUpdatePlayer(tournament?.id ?? "");
   const deletePlayer = useDeletePlayer(tournament?.id ?? "");
   const [saved, setSaved] = useState(false);
@@ -44,10 +51,20 @@ export function PlayerDetailPage() {
   if (isPlayerError) {
     return (
       <div>
-        <PageHeader title="No se pudo cargar el jugador" description="Ocurrió un error al consultar sus datos." />
+        <PageHeader
+          title="No se pudo cargar el jugador"
+          description="Ocurrió un error al consultar sus datos."
+        />
         <Card className="p-6">
-          <p role="alert" className="text-sm text-rose-700">Revisa tu conexión e inténtalo de nuevo.</p>
-          <Link to="/players" className="mt-4 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700">Volver a jugadores →</Link>
+          <p role="alert" className="text-sm text-rose-700">
+            Revisa tu conexión e inténtalo de nuevo.
+          </p>
+          <Link
+            to="/players"
+            className="mt-4 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700"
+          >
+            Volver a jugadores →
+          </Link>
         </Card>
       </div>
     );
@@ -73,13 +90,27 @@ export function PlayerDetailPage() {
     );
   }
 
+  // Con la categoría empezada o cerrada se pueden corregir los datos del jugador,
+  // pero no eliminarlo ni moverlo a otro equipo o categoría.
+  const locked = !isOpen(player.categoryId);
+  const lockedCategories = categories.filter((c) => c.id === player.categoryId);
+  // Se conserva la categoría actual del jugador aunque esté bloqueada, para que se muestre.
+  const allowedCategory = (categoryId: string) =>
+    isOpen(categoryId) || categoryId === player.categoryId;
+  const formCategories = categories.filter((c) => allowedCategory(c.id));
+  const formTeams = teams.filter((t) => allowedCategory(t.categoryId));
+
   const onDelete = async () => {
     setDeleteError(null);
     try {
       await deletePlayer.mutateAsync(player.id);
       navigate("/players", { replace: true });
-    } catch {
-      setDeleteError("No se pudo eliminar el jugador");
+    } catch (err) {
+      setDeleteError(
+        err instanceof ApiError
+          ? err.message
+          : "No se pudo eliminar el jugador",
+      );
       setConfirmDelete(false);
     }
   };
@@ -90,6 +121,13 @@ export function PlayerDetailPage() {
         title={`${player.firstName} ${player.lastName}`}
         description="Edita los datos del jugador o elimínalo."
       />
+
+      {locked && (
+        <RosterLockNotice
+          tournamentId={tournament.id}
+          categories={lockedCategories}
+        />
+      )}
 
       {saved && (
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -112,8 +150,8 @@ export function PlayerDetailPage() {
         <PlayerForm
           key={player.id}
           initial={player}
-          categories={categories}
-          teams={teams}
+          categories={formCategories}
+          teams={formTeams}
           submitLabel="Guardar cambios"
           submittingLabel="Guardando…"
           onSubmit={async (input) => {
@@ -139,14 +177,23 @@ export function PlayerDetailPage() {
         <p className="mt-1 text-sm text-slate-500">
           Eliminar al jugador es permanente.
         </p>
+        {locked && (
+          <p className="mt-3 text-sm text-amber-700">
+            No se puede eliminar: la categoría ya empezó o su campeonato está
+            cerrado.
+          </p>
+        )}
         {deleteError && (
-          <p className="mt-3 text-sm text-red-600">{deleteError}</p>
+          <p role="alert" className="mt-3 text-sm text-red-600">
+            {deleteError}
+          </p>
         )}
         {!confirmDelete ? (
           <Button
             type="button"
             variant="secondary"
             className="mt-4 !border-red-200 !text-red-700 hover:!bg-red-50"
+            disabled={locked}
             onClick={() => setConfirmDelete(true)}
           >
             <Trash2 size={16} />

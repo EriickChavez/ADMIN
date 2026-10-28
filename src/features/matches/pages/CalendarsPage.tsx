@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 import { useMyTournament } from "../../tournaments";
 import { useCategories } from "../../categories";
+import { useMembers } from "../../members";
 import { usePhases, usePhaseGroups } from "../../phases/hooks";
 import { useTeams } from "../../teams";
+import { MatchRefereesChip } from "../components/MatchRefereesChip";
 import { useAllMatches, useDeleteMatch, useUpdateMatch } from "../hooks";
 import type { Match, MatchStatus } from "../types";
 import { MATCH_STATUS_LABELS } from "../types";
@@ -60,6 +62,7 @@ export function CalendarsPage() {
   const { categories, isLoading: loadingCategories } = useCategories(
     tournament?.id,
   );
+  const membersQuery = useMembers(tournament?.id);
   const [page, setPage] = useState(1);
   const [categoryId, setCategoryId] = useState("");
   const [phaseId, setPhaseId] = useState("");
@@ -112,6 +115,17 @@ export function CalendarsPage() {
   const groupNames = useMemo(
     () => new Map(groups.map((item) => [item.id, item.name])),
     [groups],
+  );
+  // Nombres de los miembros para el chip de árbitros (se piden una sola vez).
+  const memberNameById = useMemo(
+    () =>
+      new Map(
+        membersQuery.members.map((member) => [
+          member.userId,
+          member.displayName,
+        ]),
+      ),
+    [membersQuery.members],
   );
   const matches = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("es-MX");
@@ -542,6 +556,10 @@ export function CalendarsPage() {
                       >
                         {MATCH_STATUS_LABELS[match.status]}
                       </span>
+                      <MatchRefereesChip
+                        matchId={match.id}
+                        memberNameById={memberNameById}
+                      />
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2 sm:flex-col">

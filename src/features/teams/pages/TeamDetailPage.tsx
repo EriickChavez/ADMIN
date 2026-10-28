@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle2, Trash2, Users } from "lucide-react";
+import { ApiError } from "../../../api/client";
 import { PageHeader } from "../../../shared/components/ui/PageHeader";
 import { Button } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { useCategories } from "../../categories";
+import { RosterLockNotice, useCategoryLocks } from "../../competition-state";
 import { useMyTournament } from "../../tournaments";
 import { TeamForm } from "../components/TeamForm";
 import { useDeleteTeam, useTeam, useUpdateTeam } from "../hooks";
@@ -16,6 +18,7 @@ export function TeamDetailPage() {
   const { categories, isLoading: loadingCategories } = useCategories(
     tournament?.id,
   );
+  const { isOpen } = useCategoryLocks(tournament?.id);
   const { team, isLoading, isError: isTeamError } = useTeam(tournament?.id, id);
   const updateTeam = useUpdateTeam(tournament?.id ?? "");
   const deleteTeam = useDeleteTeam(tournament?.id ?? "");
@@ -37,10 +40,20 @@ export function TeamDetailPage() {
   if (isTeamError) {
     return (
       <div>
-        <PageHeader title="No se pudo cargar el equipo" description="Ocurrió un error al consultar sus datos." />
+        <PageHeader
+          title="No se pudo cargar el equipo"
+          description="Ocurrió un error al consultar sus datos."
+        />
         <Card className="p-6">
-          <p role="alert" className="text-sm text-rose-700">Revisa tu conexión e inténtalo de nuevo.</p>
-          <Link to="/teams" className="mt-4 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700">Volver a equipos →</Link>
+          <p role="alert" className="text-sm text-rose-700">
+            Revisa tu conexión e inténtalo de nuevo.
+          </p>
+          <Link
+            to="/teams"
+            className="mt-4 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700"
+          >
+            Volver a equipos →
+          </Link>
         </Card>
       </div>
     );
@@ -66,13 +79,24 @@ export function TeamDetailPage() {
     );
   }
 
+  // Con la categoría empezada o cerrada se pueden corregir los datos del equipo,
+  // pero no eliminarlo ni moverlo a otra categoría.
+  const locked = !isOpen(team.categoryId);
+  const lockedCategories = categories.filter((c) => c.id === team.categoryId);
+  // Se conserva la categoría actual aunque esté bloqueada, para que el selector la muestre.
+  const formCategories = categories.filter(
+    (c) => isOpen(c.id) || c.id === team.categoryId,
+  );
+
   const onDelete = async () => {
     setDeleteError(null);
     try {
       await deleteTeam.mutateAsync(team.id);
       navigate("/teams", { replace: true });
-    } catch {
-      setDeleteError("No se pudo eliminar el equipo");
+    } catch (err) {
+      setDeleteError(
+        err instanceof ApiError ? err.message : "No se pudo eliminar el equipo",
+      );
       setConfirmDelete(false);
     }
   };
@@ -83,6 +107,13 @@ export function TeamDetailPage() {
         title={team.name}
         description={`${team.abbreviation} · Edita o elimina este equipo.`}
       />
+
+      {locked && (
+        <RosterLockNotice
+          tournamentId={tournament.id}
+          categories={lockedCategories}
+        />
+      )}
 
       {saved && (
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -105,7 +136,7 @@ export function TeamDetailPage() {
         <TeamForm
           key={team.id}
           initial={team}
-          categories={categories}
+          categories={formCategories}
           submitLabel="Guardar cambios"
           submittingLabel="Guardando…"
           onSubmit={async (input) => {
@@ -132,14 +163,23 @@ export function TeamDetailPage() {
           Eliminar el equipo es permanente. Los jugadores asociados podrían
           quedar afectados.
         </p>
+        {locked && (
+          <p className="mt-3 text-sm text-amber-700">
+            No se puede eliminar: la categoría ya empezó o su campeonato está
+            cerrado.
+          </p>
+        )}
         {deleteError && (
-          <p className="mt-3 text-sm text-red-600">{deleteError}</p>
+          <p role="alert" className="mt-3 text-sm text-red-600">
+            {deleteError}
+          </p>
         )}
         {!confirmDelete ? (
           <Button
             type="button"
             variant="secondary"
             className="mt-4 !border-red-200 !text-red-700 hover:!bg-red-50"
+            disabled={locked}
             onClick={() => setConfirmDelete(true)}
           >
             <Trash2 size={16} />
