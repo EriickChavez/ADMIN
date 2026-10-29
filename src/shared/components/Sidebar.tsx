@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import {
-  ChevronDown,
-  LifeBuoy,
-  LogOut,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronDown, LogOut, X, type LucideIcon } from "lucide-react";
+import { AppBrand } from "./branding/AppBrand";
 
 export interface SidebarChild {
   to: string;
@@ -34,7 +29,6 @@ interface SidebarUser {
 }
 
 interface SidebarProps {
-  appName: string;
   sections: SidebarSection[];
   loading?: boolean;
   user: SidebarUser | null;
@@ -102,8 +96,6 @@ function NavItem({
               ? `?${queryParts.join("?")}`
               : "";
 
-            // Compara la ruta y los parámetros para activar solo
-            // el subítem que corresponde a la URL actual.
             const isActive =
               location.pathname === pathname &&
               location.search === expectedSearch;
@@ -128,7 +120,6 @@ function NavItem({
 }
 
 export function Sidebar({
-  appName,
   sections,
   loading,
   user,
@@ -177,14 +168,8 @@ export function Sidebar({
         }`}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-4">
-          <Link to="/" onClick={onClose} className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
-              <LifeBuoy size={20} />
-            </span>
-
-            <span className="text-base font-bold text-slate-900">
-              {appName}
-            </span>
+          <Link to="/" onClick={onClose} className="min-w-0">
+            <AppBrand variant="sidebar" />
           </Link>
 
           <button

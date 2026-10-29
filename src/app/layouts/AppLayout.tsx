@@ -119,7 +119,6 @@ export function AppLayout() {
   return (
     <div className="min-h-dvh bg-slate-100">
       <Sidebar
-        appName={APP_NAME}
         sections={sections}
         loading={isLoading}
         user={user}
