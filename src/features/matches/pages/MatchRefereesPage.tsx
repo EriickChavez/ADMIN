@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, UserCheck } from "lucide-react";
-import { Button } from "../../../shared/components/ui/Button";
+import { ArrowLeft, UserCheck, UserPlus } from "lucide-react";
+import { Button, ButtonLink } from "../../../shared/components/ui/Button";
 import { Card } from "../../../shared/components/ui/Card";
 import { EmptyState } from "../../../shared/components/ui/EmptyState";
 import { useAuth } from "../../auth";
-import { useMembers } from "../../members";
+import { useMembers, type Member } from "../../members";
 import { useAllTeams } from "../../teams";
 import { useMatch, useMatchReferees, useSetMatchReferees } from "../hooks";
 import type { Match } from "../types";
 import { getMatchErrorMessage } from "../utils/errors";
 
 const MAX_REFEREES = 10;
+
+const isRole = (member: Member, role: "OWNER" | "ADMIN") =>
+  member.roleName?.toUpperCase() === role;
 
 function RefereesContent({ match }: { match: Match }) {
   const { user } = useAuth();
@@ -27,22 +30,34 @@ function RefereesContent({ match }: { match: Match }) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const members = [...membersQuery.members].sort((a, b) =>
-    a.displayName.localeCompare(b.displayName, "es"),
-  );
+  const allMembers = membersQuery.members;
 
-  // Solo el dueño del torneo puede asignar; los demás ven la lista.
-  const canEdit =
-    members.find((m) => m.userId === user?.id)?.roleName === "OWNER";
+  // Solo el dueño asigna árbitros.
+  const myMember = allMembers.find((m) => m.userId === user?.id);
+  const canEdit = !!myMember && isRole(myMember, "OWNER");
+
+  // Los árbitros son los miembros con rol Admin. El dueño administra el torneo,
+  // pero no arbitra: no aparece como opción.
+  const candidates = allMembers
+    .filter((m) => isRole(m, "ADMIN"))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName, "es"));
+  const candidateIds = new Set(candidates.map((m) => m.userId));
 
   const serverIds = refereesQuery.refereeUserIds;
-  const selected = draft ?? serverIds;
+  // Si el servidor trae a alguien que no es Admin (por ejemplo el dueño), no se
+  // preselecciona: al guardar se quita.
+  const hasIneligible = serverIds.some((id) => !candidateIds.has(id));
+  const selected = draft ?? serverIds.filter((id) => candidateIds.has(id));
+
   const isLoading = membersQuery.isLoading || refereesQuery.isLoading;
   const loadError = membersQuery.error ?? refereesQuery.error;
   const isDirty =
-    draft !== null &&
-    (draft.length !== serverIds.length ||
-      draft.some((id) => !serverIds.includes(id)));
+    selected.length !== serverIds.length ||
+    selected.some((id) => !serverIds.includes(id));
+
+  const assignedMembers = allMembers.filter((m) =>
+    serverIds.includes(m.userId),
+  );
 
   const teamName = new Map(teamsQuery.teams.map((t) => [t.id, t.name]));
   const home =
@@ -70,8 +85,6 @@ function RefereesContent({ match }: { match: Match }) {
       onError: (err) => setError(getMatchErrorMessage(err)),
     });
   }
-
-  const assigned = members.filter((m) => selected.includes(m.userId));
 
   return (
     <div>
@@ -104,52 +117,81 @@ function RefereesContent({ match }: { match: Match }) {
             {getMatchErrorMessage(loadError)}
           </p>
         ) : canEdit ? (
-          <ul className="space-y-2">
-            {members.map((member) => {
-              const checked = selected.includes(member.userId);
-              const disabled = !checked && selected.length >= MAX_REFEREES;
-              return (
-                <li key={member.id}>
-                  <label
-                    className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
-                      checked
-                        ? "border-blue-500 bg-blue-50/60"
-                        : "border-slate-200 hover:bg-slate-50"
-                    } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      disabled={disabled}
-                      onChange={() => toggle(member.userId)}
-                      className="h-4 w-4 accent-blue-600"
-                    />
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[11px] font-bold text-blue-700">
-                      {member.displayName.slice(0, 2).toUpperCase()}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900">
-                        {member.displayName}
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        {member.roleName === "OWNER" ? "Dueño" : "Admin"}
-                      </p>
-                    </div>
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-        ) : assigned.length === 0 ? (
-          <EmptyState
-            icon={UserCheck}
-            title="Sin árbitros asignados"
-            description="Solo el dueño del torneo puede asignar árbitros."
-          />
+          candidates.length === 0 ? (
+            <EmptyState
+              icon={UserPlus}
+              title="Aún no tienes árbitros"
+              description="Los árbitros son los miembros con rol Admin. Invita o crea uno en Miembros y vuelve aquí para asignarlo al partido."
+              action={
+                <ButtonLink to="/tournament/members">
+                  <UserPlus size={16} />
+                  Ir a Miembros
+                </ButtonLink>
+              }
+            />
+          ) : (
+            <>
+              <p className="mb-3 text-sm text-slate-500">
+                Elige quién arbitra este partido. Solo aparecen los miembros con
+                rol Admin.
+              </p>
+              <ul className="space-y-2">
+                {candidates.map((member) => {
+                  const checked = selected.includes(member.userId);
+                  const disabled = !checked && selected.length >= MAX_REFEREES;
+                  return (
+                    <li key={member.id}>
+                      <label
+                        className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
+                          checked
+                            ? "border-blue-500 bg-blue-50/60"
+                            : "border-slate-200 hover:bg-slate-50"
+                        } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={disabled}
+                          onChange={() => toggle(member.userId)}
+                          className="h-4 w-4 accent-blue-600"
+                        />
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[11px] font-bold text-blue-700">
+                          {member.displayName.slice(0, 2).toUpperCase()}
+                        </span>
+                        <p className="min-w-0 truncate text-sm font-medium text-slate-900">
+                          {member.displayName}
+                        </p>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {hasIneligible && (
+                <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Este partido tiene asignado a alguien que no es Admin (por
+                  ejemplo el dueño). Se quitará al guardar.
+                </p>
+              )}
+            </>
+          )
+        ) : assignedMembers.length === 0 ? (
+          <div>
+            <EmptyState
+              icon={UserCheck}
+              title="Sin árbitros asignados"
+              description="Solo el dueño del torneo puede asignar árbitros."
+            />
+            <p className="text-center text-xs text-slate-400">
+              {myMember
+                ? `Tu rol en este torneo: ${isRole(myMember, "OWNER") ? "Dueño" : "Admin"}.`
+                : "No encontramos tu usuario entre los miembros del torneo."}
+            </p>
+          </div>
         ) : (
           <div>
             <ul className="space-y-2">
-              {assigned.map((member) => (
+              {assignedMembers.map((member) => (
                 <li
                   key={member.id}
                   className="flex items-center gap-3 rounded-xl border border-slate-200 p-3"
@@ -165,14 +207,17 @@ function RefereesContent({ match }: { match: Match }) {
             </ul>
             <p className="mt-3 text-xs text-slate-400">
               Solo el dueño del torneo puede asignar árbitros.
+              {myMember
+                ? ` Tu rol: ${isRole(myMember, "OWNER") ? "Dueño" : "Admin"}.`
+                : " No encontramos tu usuario entre los miembros del torneo."}
             </p>
           </div>
         )}
 
         {!isLoading && !loadError && (
           <p className="mt-4 text-xs text-slate-400">
-            Sin árbitros asignados, cualquier administrador del torneo puede
-            operar la cédula. Con árbitros asignados, solo ellos y el dueño.
+            Sin árbitros asignados, cualquier Admin del torneo puede operar la
+            cédula. Con árbitros asignados, solo ellos y el dueño.
           </p>
         )}
 
@@ -193,7 +238,7 @@ function RefereesContent({ match }: { match: Match }) {
           </p>
         )}
 
-        {canEdit && !isLoading && !loadError && (
+        {canEdit && !isLoading && !loadError && candidates.length > 0 && (
           <div className="mt-5 flex items-center gap-3">
             <Button
               type="button"
