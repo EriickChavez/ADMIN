@@ -39,11 +39,14 @@ import { TeamDetailPage, TeamNewPage, TeamsPage } from "./features/teams";
 import { BrandingPage, TournamentPage } from "./features/tournaments";
 import { AppLayout } from "./app/layouts/AppLayout";
 import IdentityPage from "./features/identity";
+import { SplashPage } from "./features/auth/pages/SplashPage";
 
 export default function App() {
   return (
     <Routes>
       <Route element={<GuestRoute />}>
+        <Route path="/" element={<Navigate to="/splash" replace />} />
+        <Route path="/splash" element={<SplashPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>

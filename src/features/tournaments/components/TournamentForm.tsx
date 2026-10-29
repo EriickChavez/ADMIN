@@ -19,8 +19,16 @@ type Values = TournamentFormValues;
 
 type Errors = Partial<Record<keyof Values, string>>;
 
-const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SERVER_FIELDS: (keyof Values)[] = [
+  "name",
+  "subtitle",
+  "description",
+  "startDate",
+  "endDate",
+  "timezone",
+];
 
+// Solo para mostrar el identificador que generará la API (el slug real lo decide ella).
 const slugify = (text: string) =>
   text
     .normalize("NFD")
@@ -39,10 +47,12 @@ function getTimezones(current: string): string[] {
 
 function validate(values: Values): Errors {
   const errors: Errors = {};
-  if (!values.name.trim()) errors.name = "El nombre es obligatorio";
-  if (!values.slug) errors.slug = "El identificador es obligatorio";
-  else if (!SLUG_REGEX.test(values.slug)) {
-    errors.slug = "Usa solo minúsculas, números y guiones";
+  const name = values.name.trim();
+  if (!name) errors.name = "El nombre es obligatorio";
+  else if (name.length > 200) errors.name = "Máximo 200 caracteres";
+  if (values.subtitle.length > 255) errors.subtitle = "Máximo 255 caracteres";
+  if (values.description.length > 2000) {
+    errors.description = "Máximo 2000 caracteres";
   }
   if (values.startDate && values.endDate && values.endDate < values.startDate) {
     errors.endDate = "La fecha de fin no puede ser anterior al inicio";
@@ -117,7 +127,6 @@ export function TournamentForm({
       "UTC",
   }));
   const [timezones] = useState(() => getTimezones(values.timezone));
-  const [slugEdited, setSlugEdited] = useState(isEdit);
   const [touched, setTouched] = useState<
     Partial<Record<keyof Values, boolean>>
   >({});
@@ -134,19 +143,22 @@ export function TournamentForm({
   const visibleError = (field: keyof Values) =>
     serverErrors[field] ?? (touched[field] ? clientErrors[field] : undefined);
 
+  // Cambiar el nombre de un torneo existente regenera su identificador público.
+  const nameChanged = isEdit && values.name.trim() !== initial.name;
+
   function setField(field: keyof Values, value: string) {
     setSaved(false);
     setServerErrors((prev) => ({ ...prev, [field]: undefined }));
     setValues((prev) => {
       const next = { ...prev, [field]: value };
-      if (field === "name" && !slugEdited) next.slug = slugify(value);
+      if (field === "name") {
+        next.slug =
+          initial && value.trim() === initial.name
+            ? initial.slug
+            : slugify(value);
+      }
       return next;
     });
-  }
-
-  function setSlug(value: string) {
-    setSlugEdited(true);
-    setField("slug", value.toLowerCase().replace(/\s+/g, "-"));
   }
 
   const blur = (field: keyof Values) => () =>
@@ -154,26 +166,52 @@ export function TournamentForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setTouched({ name: true, slug: true, endDate: true });
+    setTouched({
+      name: true,
+      subtitle: true,
+      description: true,
+      endDate: true,
+    });
     setFormError(null);
     setSaved(false);
     if (Object.keys(clientErrors).length > 0) return;
 
+    // Igual que el viejo: los vacíos se omiten y, al editar, el nombre solo se
+    // manda si cambió (cambiarlo regenera el slug y podría chocar con otro torneo).
+    const name = values.name.trim();
+    const payload: TournamentInput = {
+      ...(!initial || name !== initial.name ? { name } : {}),
+      ...(values.subtitle.trim() ? { subtitle: values.subtitle.trim() } : {}),
+      ...(values.description.trim()
+        ? { description: values.description.trim() }
+        : {}),
+      ...(values.startDate ? { startDate: values.startDate } : {}),
+      ...(values.endDate ? { endDate: values.endDate } : {}),
+      ...(values.timezone ? { timezone: values.timezone } : {}),
+    };
+
     setSubmitting(true);
     try {
-      await onSubmit({
-        name: values.name.trim(),
-        subtitle: values.subtitle.trim() || null,
-        description: values.description.trim() || null,
-        slug: values.slug,
-        startDate: values.startDate || null,
-        endDate: values.endDate || null,
-        timezone: values.timezone,
-      });
+      await onSubmit(payload);
       if (isEdit) setSaved(true);
     } catch (err) {
-      if (err instanceof ApiError && err.code === "SLUG_TAKEN") {
-        setServerErrors({ slug: err.message });
+      if (err instanceof ApiError && err.code === "SLUG_ALREADY_IN_USE") {
+        setServerErrors({
+          name: "Ya existe un torneo con un nombre muy similar, prueba con otro nombre",
+        });
+      } else if (err instanceof ApiError && err.code === "VALIDATION_ERROR") {
+        // La API devuelve [{ path, message }]: se marca cada campo que reconozcamos.
+        const details = (err.details ?? []) as {
+          path?: string;
+          message?: string;
+        }[];
+        const mapped: Errors = {};
+        for (const detail of details) {
+          const field = SERVER_FIELDS.find((f) => f === detail.path);
+          if (field && detail.message) mapped[field] = detail.message;
+        }
+        if (Object.keys(mapped).length > 0) setServerErrors(mapped);
+        else setFormError(err.message);
       } else {
         setFormError(
           err instanceof ApiError ? err.message : "Error inesperado",
@@ -184,13 +222,26 @@ export function TournamentForm({
     }
   }
 
+  const slugHint = !isEdit
+    ? values.slug
+      ? `Identificador público: ${values.slug} (se genera automáticamente)`
+      : "El identificador público se genera automáticamente a partir del nombre."
+    : nameChanged
+      ? `Al cambiar el nombre, el identificador público pasará a ser: ${values.slug}`
+      : `Identificador público: ${initial.slug}`;
+
   return (
     <form
       onSubmit={handleSubmit}
       noValidate
       className="space-y-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
     >
-      <Field label="Nombre" htmlFor="name" error={visibleError("name")}>
+      <Field
+        label="Nombre"
+        htmlFor="name"
+        error={visibleError("name")}
+        hint={slugHint}
+      >
         <input
           id="name"
           type="text"
@@ -204,44 +255,34 @@ export function TournamentForm({
       </Field>
 
       <Field
-        label="Identificador"
-        htmlFor="slug"
-        error={visibleError("slug")}
-        hint={
-          values.slug
-            ? `Identificador público del torneo: ${values.slug}`
-            : undefined
-        }
+        label="Subtítulo"
+        htmlFor="subtitle"
+        optional
+        error={visibleError("subtitle")}
       >
-        <input
-          id="slug"
-          type="text"
-          value={values.slug}
-          onChange={(e) => setSlug(e.target.value)}
-          onBlur={blur("slug")}
-          placeholder="copa-laguna-2026"
-          aria-invalid={!!visibleError("slug")}
-          className={inputClass(!!visibleError("slug"))}
-        />
-      </Field>
-
-      <Field label="Subtítulo" htmlFor="subtitle" optional>
         <input
           id="subtitle"
           type="text"
           value={values.subtitle}
           onChange={(e) => setField("subtitle", e.target.value)}
-          className={inputClass(false)}
+          onBlur={blur("subtitle")}
+          className={inputClass(!!visibleError("subtitle"))}
         />
       </Field>
 
-      <Field label="Descripción" htmlFor="description" optional>
+      <Field
+        label="Descripción"
+        htmlFor="description"
+        optional
+        error={visibleError("description")}
+      >
         <textarea
           id="description"
           rows={3}
           value={values.description}
           onChange={(e) => setField("description", e.target.value)}
-          className={inputClass(false)}
+          onBlur={blur("description")}
+          className={inputClass(!!visibleError("description"))}
         />
       </Field>
 
