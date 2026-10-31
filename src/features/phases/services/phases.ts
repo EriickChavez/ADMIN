@@ -71,8 +71,8 @@ export const phasesService = {
         return data.phase;
     },
 
-    remove: async (id: string): Promise<void> => {
-        await api.delete(`/phases/${id}`);
+    remove: async (id: string, force = false): Promise<void> => {
+        await api.delete(`/phases/${id}`, force ? { params: { force: "true" } } : undefined);
     },
 
     // ---- Grupos ----

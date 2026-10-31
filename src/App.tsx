@@ -45,8 +45,8 @@ export default function App() {
   return (
     <Routes>
       <Route element={<GuestRoute />}>
-        <Route path="/" element={<Navigate to="/splash" replace />} />
-        <Route path="/splash" element={<SplashPage />} />
+        {/* <Route path="/" element={<Navigate to="/splash" replace />} />
+        <Route path="/splash" element={<SplashPage />} /> */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>

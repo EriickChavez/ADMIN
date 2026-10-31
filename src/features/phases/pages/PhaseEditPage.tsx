@@ -9,8 +9,10 @@ import { PhaseForm } from "../components/PhaseForm";
 import { useDeletePhase, usePhase, useUpdatePhase } from "../hooks";
 import { getPhaseErrorMessage } from "../utils/errors";
 import { PhaseWorkspaceNav } from "../components/PhaseWorkspaceNav";
+import { ApiError } from "../../../api/client";
 
 export function PhaseEditPage() {
+  const [forceDelete, setForceDelete] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tournament, isLoading: loadingTournament } = useMyTournament();
@@ -61,11 +63,18 @@ export function PhaseEditPage() {
   const onDelete = async () => {
     setDeleteError(null);
     try {
-      await deletePhase.mutateAsync(phase.id);
+      await deletePhase.mutateAsync({ id: phase.id, force: forceDelete });
       navigate("/phases", { replace: true });
     } catch (err) {
+      // Primer intento sin force: la fase tiene partidos, pedimos una segunda confirmación.
+      if (err instanceof ApiError && err.code === "PHASE_HAS_MATCHES") {
+        setForceDelete(true);
+        setConfirmDelete(true);
+        return;
+      }
       setDeleteError(getPhaseErrorMessage(err));
       setConfirmDelete(false);
+      setForceDelete(false);
     }
   };
 
@@ -122,11 +131,20 @@ export function PhaseEditPage() {
           Zona de peligro
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Eliminar la fase es permanente. No se puede hacer si ya tiene
-          partidos.
+          Eliminar la fase es permanente. Si ya tiene partidos, te pediremos una
+          confirmación extra para borrarlos junto con la fase.
         </p>
         {deleteError && (
           <p className="mt-3 text-sm text-red-600">{deleteError}</p>
+        )}
+        {forceDelete && (
+          <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            Esta fase tiene partidos. Si continúas se borrarán{" "}
+            <strong>todos sus partidos</strong> con sus eventos, árbitros y
+            resultados, además de grupos, equipos inscritos y llave. Las
+            posiciones, goleadores y tarjetas se recalcularán. No se puede
+            deshacer.
+          </p>
         )}
         {!confirmDelete ? (
           <Button
@@ -146,12 +164,19 @@ export function PhaseEditPage() {
               disabled={deletePhase.isPending}
               onClick={onDelete}
             >
-              {deletePhase.isPending ? "Eliminando…" : "Sí, eliminar"}
+              {deletePhase.isPending
+                ? "Eliminando…"
+                : forceDelete
+                  ? "Sí, eliminar fase y partidos"
+                  : "Sí, eliminar"}
             </Button>
             <button
               type="button"
               className="text-sm font-medium text-slate-500 hover:text-slate-800"
-              onClick={() => setConfirmDelete(false)}
+              onClick={() => {
+                setConfirmDelete(false);
+                setForceDelete(false);
+              }}
             >
               Cancelar
             </button>

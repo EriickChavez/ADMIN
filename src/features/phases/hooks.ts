@@ -77,9 +77,13 @@ export function useUpdatePhase(tournamentId: string, categoryId: string) {
 export function useDeletePhase(tournamentId: string, categoryId: string) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: string) => phasesService.remove(id),
+        mutationFn: ({ id, force }: { id: string; force?: boolean }) =>
+            phasesService.remove(id, force),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: listKey(tournamentId, categoryId) });
+            // Si se borraron partidos, el calendario y las tablas quedan viejos.
+            qc.invalidateQueries({ queryKey: ["matches", tournamentId] });
+            qc.invalidateQueries({ queryKey: ["match"] });
         },
     });
 }
